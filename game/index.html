@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="驯刀">
+
+<title>驯刀 · 现代都市文字游戏（18+）</title>
+<meta name="description" content="《驯刀》是一部双线双视角的现代都市文字游戏。她是女儿，他是刀。四个结局、十五条称号、两篇手稿彩蛋。全篇为成人向作品，仅面向 18 岁以上读者。">
+<meta name="author" content="小妈不是妈">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://eryiwanwan.github.io/xundao/game/">
+
+<!-- 社交卡片 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="驯刀">
+<meta property="og:title" content="驯刀 · 现代都市文字游戏（18+）">
+<meta property="og:description" content="双线双视角，四个结局。她是女儿，他是刀。全篇成人向，18 岁以上可玩。">
+<meta property="og:url" content="https://eryiwanwan.github.io/xundao/game/">
+<meta property="og:image" content="https://eryiwanwan.github.io/xundao/game/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="驯刀 · 现代都市文字游戏（18+）">
+<meta name="twitter:description" content="双线双视角，四个结局。她是女儿，他是刀。全篇成人向，18 岁以上可玩。">
+<meta name="twitter:image" content="https://eryiwanwan.github.io/xundao/game/assets/og.jpg">
+<meta name="twitter:creator" content="@eryiwanwan">
+
+<!-- 图标与站点清单（添加到主屏幕后全屏运行） -->
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<link rel="preload" as="image" href="assets/bg/title_stairs.jpg">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* 首屏底色：样式表加载完成前不要闪白 */
+  html, body { margin: 0; background: #0a0b0d; color: #e8e6e3; }
+  #boot {
+    position: fixed; inset: 0; z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    background: #0a0b0d; color: #6f6a63;
+    font: 400 13px/1.9 "Songti SC", "Noto Serif SC", serif;
+    letter-spacing: .28em; transition: opacity .5s ease;
+  }
+  #boot.gone { opacity: 0; pointer-events: none; }
+  .nojs { position: fixed; inset: 0; display: flex; align-items: center;
+    justify-content: center; padding: 2em; text-align: center; }
+</style>
+</head>
+<body>
+  <div id="bg"></div>           <!-- 背景色层（兜底） -->
+  <div id="bgimg"></div>         <!-- 背景图层（在背景色之上） -->
+  <div id="chars"></div>         <!-- 立绘层（在背景图之上，文字之下） -->
+  <div id="hud"></div>
+  <div id="stage"></div>
+  <audio id="bgm" loop preload="auto"></audio>   <!-- 背景音乐 -->
+  <audio id="sfx" preload="none"></audio>       <!-- 单次音效 -->
+
+  <div id="boot">正在落雪</div>
+  <noscript>
+    <div class="nojs">《驯刀》需要 JavaScript 才能阅读。<br>请在浏览器设置里开启后刷新页面。</div>
+  </noscript>
+
+  <!-- 顺序很重要：先加载彩蛋数据与剧情数据，再加载引擎 -->
+  <script src="eggs.js"></script>
+  <script src="story.js"></script>
+  <script src="engine.js"></script>
+  <script>
+    /* 引擎渲染完封面后收起启动遮罩；网络慢也不卡住入口 */
+    (function(){
+      var b = document.getElementById('boot');
+      function hide(){
+        if(!b || b.classList.contains('gone')) return;
+        b.classList.add('gone');
+        setTimeout(function(){ if(b.parentNode) b.parentNode.removeChild(b); }, 600);
+      }
+      if(document.readyState === 'complete') setTimeout(hide, 120);
+      else window.addEventListener('load', function(){ setTimeout(hide, 120); });
+      setTimeout(hide, 2500);
+    })();
+  </script>
+</body>
+</html>

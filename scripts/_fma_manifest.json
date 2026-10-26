@@ -1,0 +1,27 @@
+{
+ "note": "2026-10-27 换用 Free Music Archive 曲目的记录。_fma_dl/ 里的原始 mp3 已删除，重跑 fma_track.py 的 get 命令即可再取。",
+ "chosen": {
+  "title": {"name": "Days of Being Wild", "author": "Hong Kong Express", "license": "CC BY-NC-SA 4.0",
+            "url": "https://freemusicarchive.org/music/Hong_Kong_Express/The_Music_of_the_Now_Age_III/Hong_Kong_Express_-_The_Music_of_the_Now_Age_III_-_11_Days_of_Being_Wild/",
+            "cut": "96s @52s", "why": "港式夜雾，长淡入，铺在封面上不抢话"},
+  "quiz_cold": {"name": "Photos Of Murder", "author": "John Bartmann", "license": "CC0 1.0",
+                "url": "https://freemusicarchive.org/music/John_Bartmann/Royalty-Free_Soundtrack_Music_Album_Two/photos-of-murder/",
+                "cut": "64s @2s", "why": "无低频、稀疏，配『父亲留下的东西』那种冷登记感"},
+  "stairs_tense": {"name": "Hong Kong Noir", "author": "John Bartmann", "license": "CC0 1.0",
+                   "url": "https://freemusicarchive.org/music/John_Bartmann/Royalty-Free_Soundtrack_Music_Album_Two/hong-kong-noir/",
+                   "cut": "84s @24s", "why": "有脉但不炸，楼道跟踪与对峙都用它"},
+  "aftermath": {"name": "Floating Lanterns", "author": "John Bartmann", "license": "CC0 1.0",
+                "url": "https://freemusicarchive.org/music/John_Bartmann/chinese-valentine/floating-lanterns/",
+                "cut": "76s @40s", "why": "哀而不伤，章末与《烟花》都能用"},
+  "dawn": {"name": "Hopeful Start", "author": "John Bartmann", "license": "CC0 1.0",
+           "url": "https://freemusicarchive.org/music/John_Bartmann/Royalty-Free_Soundtrack_Music_Album_Two/hopeful-start/",
+           "cut": "88s @14s", "why": "亮度高，HE 与番外的『天亮』"}
+ },
+ "rejected": {
+  "粤语人声": "FMA 按 cantonese 只检索到两条：Infinite Livez《4everysmiley》（CC BY-NC-ND，ND 不允许剪辑；且为英语说唱）、Les Cartes Postales Sonores《Cantonese Traditional Music ||| Outdoor Live》（CC BY-NC-SA，新加坡街头粤曲环境录音，放在北方雪夜会出戏）",
+  "SUB8ION / After Midnight 专辑": "标签 cantopop，但四首都做过语音识别，无人声（纯器乐）；且授权为 CC BY-NC-ND，不能截取循环",
+  "John Bartmann / Chinese Valentine 其余曲目": "Neon City Love Affair、Village Temple Romance、Long Way To Kunming、Cherry Blossom、Dumplings For Two、Oriental Bossa 均为 CC0，备选",
+  "John Bartmann / Album Two 其余曲目": "Jazzy Detective、Shooter On The Roof、It Was Another Time、Gentle Rain、Careful Tiptoe 均为 CC0，备选"
+ },
+ "backup": "原 opengameart CC0 五首在 scripts/_bgm_backup/"
+}

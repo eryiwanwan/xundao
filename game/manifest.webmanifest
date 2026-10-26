@@ -1,0 +1,16 @@
+{
+  "name": "驯刀",
+  "short_name": "驯刀",
+  "description": "现代都市 · 双线双视角 · 成人向文字游戏",
+  "lang": "zh-CN",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0b0d",
+  "theme_color": "#0a0b0d",
+  "icons": [
+    { "src": "assets/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "assets/favicon.png", "sizes": "64x64", "type": "image/png" }
+  ]
+}

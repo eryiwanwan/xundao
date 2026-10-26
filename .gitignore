@@ -1,0 +1,25 @@
+# 忽略：制作素材、中间产物、本地备份
+_source_art/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+
+# 音频抓取与处理过程中的临时文件（成品在 game/assets/ 里）
+scripts/_bgm_backup/
+scripts/_oga_dl/
+scripts/_fma_dl/
+scripts/_fma_hits.json
+scripts/_audio_log.json
+
+# 截图（本地核对用，不发布）
+scripts/shots/
+scripts/_shots/
+
+# 编辑器
+.vscode/
+.idea/
+
+# 两篇手稿的未删改原文（只在本地保留，仓库里只有编码后的 eggs.js）
+chapters/*_18plus.md
+03_全文文本.md
