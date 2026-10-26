@@ -176,11 +176,12 @@ async function main() {
   const pagesBody = { source: { branch: "main", path: "/" } };
   try {
     const p = await api("POST", `/repos/${owner}/${REPO}/pages`, pagesBody);
-    console.log("Pages 已开启：" + p.html_url);
+    console.log("Pages 已开启：" + (p && p.html_url ? p.html_url : "(已提交配置)"));
   } catch (e) {
     if (e.status === 409 || e.status === 422) {
+      // PUT 成功时返回 204 无内容，json 为 null，不能直接取字段
       const p = await api("PUT", `/repos/${owner}/${REPO}/pages`, pagesBody);
-      console.log("Pages 已更新：" + p.html_url);
+      console.log("Pages 配置已更新（main / 根目录）" + (p && p.html_url ? "：" + p.html_url : ""));
     } else {
       console.warn("Pages 开启失败（可稍后在仓库 Settings → Pages 手动选 main / (root)）：" + e.message);
     }
