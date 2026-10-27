@@ -4,50 +4,101 @@
    流程：封面 → 视角选择 → 入场问卷 → 正文 → 结局分歧 → 结算
        封面 → 番外篇（解锁后）→ 番外正文 → 番外结算
        封面 → 图鉴 / 称号（跨周目累积）
-   支持：
-     - 问卷变体(qvar)、好感结算、选项分支、自动存档/继续
-     - 立绘(char)、背景图(bgimg)、背景音乐(bgm)、音效(sfx)
-     - 多结局分歧(endcheck)、隐藏 flag
-     - 图鉴收集（场景/人物/档案/结局）、称号解锁
-   操作：点击 / 空格 / 回车 推进文字（全屏任意位置可点）
+   0.9 版新增：
+     - 三维数值：好感 favor（0–100）／执念 danger（0–100）／线索 clue（0–5）
+     - 结局改由 story.js 的 endings 表登记，endcheck 的 case 直接写 ending
+     - 同一段正文只播一次：读过就记下，「跳过已读」可一键掠过旧剧情
+     - 结局页复盘三个数值
    ============================================================ */
 
-const SAVE_KEY = "xundao_demo_v1";
-const COL_KEY = "xundao_collect_v1";
-const AGE_KEY = "xundao_ageack_v1";      // 首屏年龄提示是否已确认（本机记忆）
+const SAVE_KEY = "xundao_demo_v2";
+const COL_KEY  = "xundao_collect_v1";
+const AGE_KEY  = "xundao_ageack_v1";      // 首屏年龄提示是否已确认（本机记忆）
+const READ_KEY = "xundao_read_v1";        // 已读正文指纹（跳过已读用）
+const SKIP_KEY = "xundao_skip_v1";        // 「跳过已读」开关（本机记忆）
+
+const FAVOR_MAX  = 100;
+const DANGER_MAX = 100;
+const DANGER_BASE = 20;                   // 起手执念：他本来就带着火
+const CLUE_MAX   = 5;
+
 let ageAcked = (function(){ try{ return localStorage.getItem(AGE_KEY) === "1"; }catch(e){ return false; } })();
+let skipRead = (function(){ try{ return localStorage.getItem(SKIP_KEY) === "1"; }catch(e){ return false; } })();
 let state = null;
 let typingTimer = null;
+
+function clampNum(v, lo, hi){ return Math.max(lo, Math.min(hi, v|0)); }
 
 /* ============================================================
    一、存档
    ============================================================ */
-function save(){ if(state) { try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} } }
+/* 存档节流：每推一句都写一次整条队列会卡（尤其手机）。
+   现在最多 400ms 落盘一次，离开页面前强制 flush。 */
+let saveTimer = null, saveDirty = false;
+function save(){
+  if(!state) return;
+  saveDirty = true;
+  if(saveTimer) return;
+  saveTimer = setTimeout(()=>{ saveTimer = null; flushSave(); }, 400);
+}
+function flushSave(){
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  if(!saveDirty || !state) return;
+  saveDirty = false;
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
+}
+function saveNow(){ saveDirty = true; flushSave(); }
 function load(){ try{ const s=localStorage.getItem(SAVE_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
 function hasSave(){ return !!load(); }
-function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} state=null; showTitle(); }
+function clearSave(){
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; }
+  saveDirty = false;
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  state=null; showTitle();
+}
 
 /* ============================================================
    二、收集存档（图鉴 / 称号 / 结局，跨周目累积，不随「清除存档」清空）
    ============================================================ */
+const COL_VERSION = 9;
 function blankCol(){
-  return { bg:{}, char:{}, lore:{}, endings:{}, titles:{}, extras:{}, lines:{}, he:{},
-           ends:{},          // 每条线分别记结局："wan:he" / "jiang:be" ……（彩蛋解锁用）
-           clears:0 };
+  return { v: COL_VERSION,
+           bg:{}, char:{}, lore:{}, endings:{}, titles:{}, extras:{}, lines:{}, he:{},
+           ends:{},          // 每条线分别记结局："wan:he" / "hidden:platform" ……（彩蛋与称号判定用）
+           clears:0, peakFavor:0 };
 }
 let progress = blankCol();
+
 function loadCol(){
   try{
-    const s = localStorage.getItem(COL_KEY);
-    const raw = s ? JSON.parse(s) : null;
-    progress = raw ? Object.assign(blankCol(), raw) : blankCol();
-    if(raw && !raw.ends){
-      // 旧存档迁移：HE 本来就是分线记的，可以无歧义补回；普通 / BE 当年没分线，只能重走
-      progress.ends = {};
-      for(const line of ["wan","jiang"]) if(progress.he && progress.he[line]) progress.ends[line+":he"] = true;
-      saveCol();
-    }
+    const raw = JSON.parse(localStorage.getItem(COL_KEY) || "null");
+    if(!raw){ progress = blankCol(); return; }
+    progress = Object.assign(blankCol(), raw);
+    if(raw.v !== COL_VERSION) migrateCol(raw);
   }catch(e){ progress = blankCol(); }
+}
+/* 0.8 → 0.9：结局从「he/normal/be/hidden 四个」变成「wan:he 这样的 14 个」 */
+function migrateCol(raw){
+  const ends = {};
+  const oldEnds = (raw && raw.ends) || {};
+  for(const k of Object.keys(oldEnds)) if(oldEnds[k]) ends[k] = true;
+  if(raw && raw.he){                     // 早期只记了 HE，按线补回
+    for(const line of ["wan","jiang"]) if(raw.he[line]) ends[line + ":he"] = true;
+  }
+  progress.ends = ends;
+
+  const ne = {};
+  const oe = (raw && raw.endings) || {};
+  for(const k of Object.keys(oe)){
+    if(!oe[k]) continue;
+    if(k.includes(":")){ ne[k] = true; continue; }          // 已经是新键名
+    if(k === "hidden"){ ne["hidden:laowan"] = true; continue; }
+    if(ends["wan:" + k]) ne["wan:" + k] = true;             // 旧键分不清线，按线的记录还原
+    if(ends["jiang:" + k]) ne["jiang:" + k] = true;
+  }
+  progress.endings = ne;
+  progress.v = COL_VERSION;
+  saveCol();
 }
 function saveCol(){ try{ localStorage.setItem(COL_KEY, JSON.stringify(progress)); }catch(e){} }
 function resetCol(){
@@ -55,14 +106,27 @@ function resetCol(){
   progress = blankCol(); saveCol(); showTitle();
 }
 
-/* 图鉴总量 */
+/* ---------- 结局表 ---------- */
+function endingList(){
+  const t = STORY.endings || {};
+  return Object.keys(t).map(id => Object.assign({ id }, t[id]));
+}
+function endingOf(id){
+  if(!id) return null;
+  return (STORY.endings || {})[id] || null;
+}
+function lineEndingIds(line){
+  return endingList().filter(e => e.line === line).map(e => e.id);
+}
+
+/* ---------- 图鉴总量 ---------- */
 function galleryCount(){
-  const g = STORY.gallery || {bg:{},char:{},lore:[],ending:[]};
+  const g = STORY.gallery || {bg:{},char:{},lore:[]};
   const bg = Object.keys(g.bg||{}).length;
   let ch = 0;
   for(const w of Object.keys(g.char||{})) ch += Object.keys(g.char[w]).length;
-  return { bg, char: ch, lore: (g.lore||[]).length, ending: (g.ending||[]).length,
-           total: bg + ch + (g.lore||[]).length + (g.ending||[]).length };
+  return { bg, char: ch, lore: (g.lore||[]).length, ending: endingList().length,
+           total: bg + ch + (g.lore||[]).length + endingList().length };
 }
 function galleryFound(){
   const g = STORY.gallery || {bg:{},char:{}};
@@ -74,43 +138,48 @@ function galleryFound(){
     bg: Object.keys(progress.bg||{}).length,
     char: ch,
     lore: Object.keys(progress.lore||{}).length,
-    ending: Object.keys(progress.endings||{}).length
+    ending: endingList().filter(e => !!progress.endings[e.id]).length
   };
 }
 
-/* 一条线能走出的结局类型（隐藏结局是番外，不算在单条线里） */
-const LINE_ENDINGS = ["he", "normal", "be"];
-
 /* 某条线的结局是否已全部走完 */
 function lineEndsDone(line){
-  const e = progress.ends || {};
-  return LINE_ENDINGS.every(t => !!e[line + ":" + t]);
+  return lineEndingIds(line).every(id => !!progress.ends[id]);
 }
 function lineEndsCount(line){
-  const e = progress.ends || {};
-  return LINE_ENDINGS.filter(t => !!e[line + ":" + t]).length;
+  return lineEndingIds(line).filter(id => !!progress.ends[id]).length;
+}
+function allEndsDone(){
+  return endingList().every(e => !!progress.ends[e.id]);
 }
 
 /* 称号条件判定 */
 function condMet(id){
   const p = progress;
   const g = galleryCount(), f = galleryFound();
+  const e = p.ends || {};
   switch(id){
     case "anyEnding":  return Object.keys(p.endings||{}).length > 0;
-    case "normalEnd":  return !!p.endings.normal;
-    case "beEnd":      return !!p.endings.be;
+    case "normalEnd":  return !!(e["wan:normal"] || e["jiang:normal"]);
+    case "beEnd":      return !!(e["wan:be"] || e["jiang:be"]);
     case "wanHE":      return !!p.he.wan;
     case "jiangHE":    return !!p.he.jiang;
     case "bothLines":  return !!(p.lines.wan && p.lines.jiang);
     case "lore8":      return f.lore >= 8;
     case "allGallery": return (f.bg+f.char+f.lore+f.ending) >= g.total;
     case "laowan":     return !!p.extras.laowan;
+    case "platformEnd":return !!p.extras.platform;
     case "jujia":      return !!p.extras.jujia;
     case "yanhua":     return !!p.extras.yanhua;
     case "rawread":    return !!(p.extras.yanhua && p.extras.jujia);
-    case "allEndings": return ["he","normal","be","hidden"].every(k=>!!p.endings[k]);
+    case "allEndings": return allEndsDone();
     case "wanAllEnds":   return lineEndsDone("wan");
     case "jiangAllEnds": return lineEndsDone("jiang");
+    case "wanEmber":   return !!e["wan:ember"];
+    case "wanClean":   return !!e["wan:clean"];
+    case "jiangScar":  return !!e["jiang:scar"];
+    case "jiangEmpty": return !!e["jiang:empty"];
+    case "peakFavor":  return (p.peakFavor || 0) >= FAVOR_MAX;
     default: return false;
   }
 }
@@ -149,21 +218,61 @@ function collectLore(txt){
 }
 
 /* ============================================================
-   三、门槛（固定取 story.js 的默认值）
+   三、已读记录（跳过已读）
    ============================================================ */
-function getThresholds(){
-  const def = STORY.thresholds || { he:12, normal:5, hidden:-1 };
-  return Object.assign({ he:12, normal:5, hidden:-1 }, def);
+let readSet = {};
+let readDirty = 0;
+(function loadRead(){
+  try{ readSet = JSON.parse(localStorage.getItem(READ_KEY) || "{}") || {}; }catch(e){ readSet = {}; }
+})();
+function hashText(t){
+  let h = 2166136261;
+  for(let i=0;i<t.length;i++){ h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
 }
-
-function freshState(line, mode){
-  return { screen:"quiz", line, mode:mode||"main", extraKey:null,
-           profile:{}, favor:0, flags:{}, queue:[], idx:0, log:[], qi:0,
-           ending:null, done:false };
+function isRead(txt){ return !!readSet[hashText(txt)]; }
+function markRead(txt){
+  const h = hashText(txt);
+  if(readSet[h]) return;
+  readSet[h] = 1;
+  if(++readDirty >= 12) flushRead();
+}
+function flushRead(){
+  if(!readDirty) return;
+  readDirty = 0;
+  try{ localStorage.setItem(READ_KEY, JSON.stringify(readSet)); }catch(e){}
+}
+function readCount(){ return Object.keys(readSet).length; }
+function toggleSkip(){
+  skipRead = !skipRead;
+  try{ localStorage.setItem(SKIP_KEY, skipRead ? "1" : "0"); }catch(e){}
+  setHud();
+  if(state && state.screen === "story" && !state.extraFreeze) renderNode();
 }
 
 /* ============================================================
-   四、HUD
+   四、新建一局
+   ============================================================ */
+function getThresholds(){
+  return Object.assign({ he:80, normal:55, cold:30 }, STORY.thresholds || {});
+}
+
+function freshState(line, mode){
+  return { v: 2, screen:"quiz", line, mode:mode||"main", extraKey:null,
+           profile:{}, favor:0, danger:DANGER_BASE, clue:0,
+           flags:{}, queue:[], idx:0, log:[], qi:0,
+           ending:null, done:false };
+}
+/* 老存档（0.8 的 34 分制）直接不认，重开一局 */
+function loadState(){
+  const s = load();
+  if(!s) return null;
+  if(s.v !== 2 || typeof s.favor !== "number") return null;
+  return s;
+}
+
+/* ============================================================
+   五、HUD
    ============================================================ */
 function hudTitle(){
   if(!state) return "";
@@ -176,28 +285,31 @@ function hudTitle(){
 function setHud(){
   const hud = document.getElementById('hud');
   if(!state || (!state.line && !state.extraKey)){ hud.innerHTML=""; return; }
-  // 不在 HUD 实时显示好感度数值，避免玩家盯着数值做决策；章末结算时才给反馈
+  // 数值不上 HUD：好感/执念/线索只在结局页复盘
   hud.innerHTML = `
     <div class="hud-left">${hudTitle()}<span class="hud-adult" title="本作含成人向内容，仅限 18 岁以上">18+</span></div>
     <div class="hud-right">
+      <button class="mini ${skipRead?'on':''}" onclick="toggleSkip()" title="读过的正文自动掠过，选项不会跳过">跳过已读</button>
       <button class="mini" onclick="showGallery()">图鉴</button>
       <button class="mini" onclick="showTitle()">返回封面</button>
     </div>`;
 }
 
 /* ============================================================
-   五、封面
+   六、封面
    ============================================================ */
 function showTitle(){
+  flushSave();                                 // 回封面前把进度落盘
   state = null;
   typingTimer = null;
+  flushRead();
   loadCol();                                   // 每次回封面刷新收集状态
   checkTitles();                               // 顺带结算一下可能漏掉的称号
-  const cont = hasSave();
+  const cont = !!loadState();
   const g = galleryCount(), f = galleryFound();
   const found = f.bg + f.char + f.lore + f.ending;
   const tGot = Object.keys(progress.titles||{}).length;
-  const extrasUnlocked = (STORY.extras ? Object.keys(STORY.extras).filter(k=>extraUnlocked(k)).length : 0);
+  const extrasUnlockedN = (STORY.extras ? Object.keys(STORY.extras).filter(k=>extraUnlocked(k)).length : 0);
   const extrasTotal = STORY.extras ? Object.keys(STORY.extras).length : 0;
 
   document.getElementById('stage').innerHTML = `
@@ -214,7 +326,7 @@ function showTitle(){
         <div class="cover-btns">
           ${cont ? '<button class="btn primary" onclick="startContinue()">继续上次</button>' : ''}
           <button class="btn ${cont?'':'primary'}" onclick="showLineSelect()">${cont?'新的开始':'开始'}</button>
-          <button class="btn" onclick="showExtras()">番外篇<span class="btn-badge">${extrasUnlocked}/${extrasTotal}</span></button>
+          <button class="btn" onclick="showExtras()">番外篇<span class="btn-badge">${extrasUnlockedN}/${extrasTotal}</span></button>
           <button class="btn" onclick="showGallery()">图鉴<span class="btn-badge">${found}/${g.total}</span></button>
           <button class="btn" onclick="showTitles()">称号<span class="btn-badge">${tGot}/${(STORY.titles||[]).length}</span></button>
         </div>
@@ -267,7 +379,7 @@ function closeAgeGate(){
 }
 
 function startContinue(){
-  const s = load(); if(!s){ showTitle(); return; }
+  const s = loadState(); if(!s){ showTitle(); return; }
   state = s;
   setHud();
   if(state.screen === "story"){ renderNode(); }
@@ -276,10 +388,14 @@ function startContinue(){
 }
 
 /* ============================================================
-   六、视角选择
+   七、视角选择
    ============================================================ */
 function showLineSelect(){
   state = null;
+  const rows = ["wan","jiang"].map(L=>{
+    const done = lineEndsCount(L), total = lineEndingIds(L).length;
+    return `<div class="ls-prog">已走完 ${done} / ${total} 个结局</div>`;
+  });
   document.getElementById('stage').innerHTML = `
     <div class="ls-wrap">
       <div class="ls-title">选定你的视角</div>
@@ -288,11 +404,13 @@ function showLineSelect(){
           <div class="ls-name">万宁</div>
           <div class="ls-tag">驯化与救赎</div>
           <div class="ls-desc">19岁复读高三。心思通透，擅长拿捏人心。她在等他来——明知是刀，也伸手接。</div>
+          ${rows[0]}
         </div>
         <div class="ls-card jiang" onclick="startQuiz('jiang')">
           <div class="ls-name">江野</div>
           <div class="ls-tag">复仇与沦陷</div>
           <div class="ls-desc">22岁刚出狱。回雾川讨债，债主已死，恨转向仇人之女。可那把刀，怎么也落不下去。</div>
+          ${rows[1]}
         </div>
       </div>
       <button class="btn ghost" onclick="showTitle()">返回封面</button>
@@ -301,7 +419,7 @@ function showLineSelect(){
 }
 
 /* ============================================================
-   七、入场问卷
+   八、入场问卷
    ============================================================ */
 function startQuiz(line){
   state = freshState(line, "main"); save();
@@ -311,7 +429,10 @@ function renderQuiz(){
   const Qs = STORY.quiz[state.line];
   const i = state.qi;
   if(i >= Qs.length){ // 问卷完成
-    state.favor = sumQuizFavor();
+    const s = sumQuizStats();
+    state.favor = clampNum(s.favor, 0, FAVOR_MAX);
+    state.danger = clampNum(DANGER_BASE + s.danger, 0, DANGER_MAX);
+    state.clue = clampNum(s.clue, 0, CLUE_MAX);
     state.screen = "story";
     save();
     enterStory();
@@ -340,18 +461,22 @@ function answerQuiz(k){
   save();
   renderQuiz();
 }
-function sumQuizFavor(){
-  let f=0; const Qs = STORY.quiz[state.line];
+function sumQuizStats(){
+  let favor=0, danger=0, clue=0;
+  const Qs = STORY.quiz[state.line];
   for(const q of Qs){
     const a = state.profile[q.id]; if(!a) continue;
     const idx = a.charCodeAt(0)-65;
-    if(q.opts[idx]) f += q.opts[idx].favor||0;
+    const o = q.opts[idx]; if(!o) continue;
+    favor  += o.favor||0;
+    danger += o.danger||0;
+    clue   += o.clue||0;
   }
-  return f;
+  return { favor, danger, clue };
 }
 
 /* ============================================================
-   八、正文推进
+   九、正文推进
    ============================================================ */
 function enterStory(){
   state.queue = STORY.lines[state.line].slice();
@@ -359,6 +484,35 @@ function enterStory(){
   state.screen = "story";
   save();
   renderNode();
+}
+
+/* endcheck 单条 case 是否成立 */
+function caseMet(c){
+  const f = state.favor||0, d = state.danger||0, cu = state.clue||0;
+  const fl = state.flags||{};
+  if(c.ifFlag){
+    const want = (c.flagVal===undefined?true:c.flagVal);
+    if((!!fl[c.ifFlag]) !== want) return false;
+    if(!c.if) return true;               // 只判 flag
+  }
+  if(c.else) return true;
+  if(c.if){
+    const x = c.if;
+    if(x.favorMin  !== undefined && f  < x.favorMin)  return false;
+    if(x.favorMax  !== undefined && f  > x.favorMax)  return false;
+    if(x.dangerMin !== undefined && d  < x.dangerMin) return false;
+    if(x.dangerMax !== undefined && d  > x.dangerMax) return false;
+    if(x.clueMin   !== undefined && cu < x.clueMin)   return false;
+    if(x.clueMax   !== undefined && cu > x.clueMax)   return false;
+    return true;
+  }
+  if(c.min !== undefined) return f >= c.min;   // 老写法
+  return false;
+}
+/* case 上写的 ending 可以是 "wan:he"，也可以只写 "he"（自动补当前线） */
+function caseEndingId(c){
+  if(!c || !c.ending) return null;
+  return c.ending.includes(":") ? c.ending : (state.line + ":" + c.ending);
 }
 
 // 渲染当前节点（自动跳过 bg/qvar/bgimg/char/bgm/sfx 等非展示节点）
@@ -384,26 +538,22 @@ function renderNode(){
       continue; // 不递增 idx，处理替换进来的第一个节点
     }
     if(n.t==="endcheck"){
-      // 判定顺序：ifFlag（隐藏 flag，可指定 false）→ min（好感门槛）→ else
-      const thr = getThresholds();
-      const flags = state.flags || {};
+      const cases = n.cases || [];
       let picked = null;
-      for(const c of (n.cases||[])){
-        if(c.ifFlag){
-          const want = (c.flagVal===undefined?true:c.flagVal);
-          if((!!flags[c.ifFlag]) === want){ picked = c; break; }
-          continue;
-        }
-        if(c.else){ picked = c; continue; }
-        if(state.favor >= (c.min ?? thr.he)){ picked = c; break; }
-      }
-      if(!picked) picked = (n.cases||[]).find(c=>c.else) || { branch:[{t:"end"}] };
+      for(const c of cases){ if(caseMet(c)){ picked = c; break; } }
+      if(!picked) picked = cases.find(c=>c.else) || { branch:[{t:"end"}] };
+      const eid = caseEndingId(picked);
+      if(eid) state.ending = { id: eid, line: state.line };
       state.queue.splice(state.idx, 1, ...(picked.branch||[{t:"end"}]));
       save();
       continue; // 用分支替换 endcheck，继续处理
     }
     if(n.t==="end"){ showEnd(); return; }
-    if(n.t==="text"){ renderText(n); return; }
+    if(n.t==="text"){
+      // 读过就掠过（选项永远不跳）
+      if(skipRead && isRead(n.txt)){ state.idx++; save(); continue; }
+      renderText(n); return;
+    }
     if(n.t==="choice"){ renderChoice(n); return; }
     state.idx++; // 未知类型，跳过
   }
@@ -412,7 +562,6 @@ function renderNode(){
 
 function applyBg(c){
   const el = document.getElementById('bg');
-  // 底色 + 一层很淡的中心光晕：没有背景图时（审讯室、闪回）也不会是一块死黑
   el.style.backgroundColor = c || "#0a0b0d";
   el.style.backgroundImage =
     "radial-gradient(ellipse 86% 64% at 50% 36%, rgba(255,244,222,.115) 0%, rgba(255,244,222,.035) 45%, rgba(0,0,0,0) 74%)";
@@ -436,7 +585,6 @@ function applyBgImg(key){
 }
 
 /* ---------- 立绘 ---------- */
-// who=null 清空所有立绘；who="jiang"|"wan" 显示对应角色的指定 pose
 function applyChar(who, pose){
   const layer = document.getElementById('chars');
   if(!layer) return;
@@ -444,7 +592,7 @@ function applyChar(who, pose){
   const pos = pose || "normal";
   const charPath = STORY.assets && STORY.assets.char && STORY.assets.char[who] && STORY.assets.char[who][pos];
   layer.innerHTML = "";
-  if(!charPath) return;  // 无素材不显示立绘，留位
+  if(!charPath) return;
   collectChar(who, pos);
   const side = (who==="jiang") ? "right" : "left";
   const div = document.createElement('div');
@@ -457,14 +605,14 @@ function applyChar(who, pose){
 let currentBgmKey = null;
 function applyBgm(key){
   const path = (STORY.assets && STORY.assets.bgm && STORY.assets.bgm[key]) || "";
-  if(!path){ stopBgm(); return; }  // 无素材静音
-  if(currentBgmKey === key) return; // 已在播放，不重复
+  if(!path){ stopBgm(); return; }
+  if(currentBgmKey === key) return;
   const a = document.getElementById('bgm');
   if(!a) return;
   a.src = path;
   a.loop = true;
-  a.volume = 0.38;                 // 背景乐压低，让文字在前
-  a.play().catch(()=>{});          // 自动播放被浏览器拦截时静默失败
+  a.volume = 0.38;
+  a.play().catch(()=>{});
   currentBgmKey = key;
 }
 function stopBgm(){
@@ -487,10 +635,10 @@ function playSfx(key){
 
 function renderText(n){
   collectLore(n.txt || "");
+  markRead(n.txt || "");
   detectEnding(n.txt || "");
   const stage = document.getElementById('stage');
   const sp = n.sp ? `<div class="speaker">${n.sp}</div>` : "";
-  // 不在 dialog 上绑 onclick，改由全局 click 监听统一处理（全屏可点推进）
   stage.innerHTML = `
     <div class="dialog">
       ${sp}
@@ -500,17 +648,29 @@ function renderText(n){
   typewriter(n.txt);
 }
 
-/* 结局识别：靠结局标题文本判定（不用改剧情文件） */
-const ENDING_MAP = [
-  { re: /^HE · 《驯刀》/,        type:"he" },
-  { re: /^普通结局 · 《各自过冬》/, type:"normal" },
-  { re: /^BE · 《野狗的死法》/,   type:"be" },
-  { re: /^隐藏结局 · 《老万的十年》/, type:"hidden" }
+/* 兜底：万一某条分支忘了写 ending，就靠标题文字认（正常情况用不到） */
+const ENDING_TEXT_MAP = [
+  { re: /^HE · 《驯刀》/,              id: "he" },
+  { re: /^普通结局 · 《各自过冬》/,     id: "normal" },
+  { re: /^BE · 《野狗的死法》/,         id: "be" },
+  { re: /^暗结局 · 《没有一个人是干净的》/, id: "wan:clean" },
+  { re: /^暗结局 · 《手上有雪》/,        id: "jiang:scar" },
+  { re: /^温和结局 · 《灯亮着》/,        id: "wan:ember" },
+  { re: /^温和结局 · 《空房间》/,        id: "jiang:empty" },
+  { re: /^疏离结局 · 《雪停之前》/,      id: "wan:cold" },
+  { re: /^疏离结局 · 《往北的路》/,      id: "jiang:cold" },
+  { re: /^隐藏结局 · 《老万的十年》/,    id: "hidden:laowan" },
+  { re: /^隐藏结局 · 《同一个站台》/,    id: "hidden:platform" }
 ];
 function detectEnding(txt){
-  if(state.mode !== "main") return;
-  for(const e of ENDING_MAP){
-    if(e.re.test(txt)){ state.ending = { type: e.type, line: state.line }; return; }
+  if(state.mode !== "main" || state.ending) return;
+  for(const e of ENDING_TEXT_MAP){
+    if(e.re.test(txt)){
+      const id = e.id.includes(":") ? e.id : (state.line + ":" + e.id);
+      state.ending = { id, line: state.line };
+      save();
+      return;
+    }
   }
 }
 
@@ -531,14 +691,16 @@ function renderChoice(n){
 function choose(k){
   const n = state.queue[state.idx]; // choice 节点
   const o = n.opts[k];
-  state.favor += o.favor;
+  state.favor  = clampNum((state.favor||0)  + (o.favor||0),  0, FAVOR_MAX);
+  state.danger = clampNum((state.danger||0) + (o.danger||0), 0, DANGER_MAX);
+  state.clue   = clampNum((state.clue||0)   + (o.clue||0),   0, CLUE_MAX);
   state.log.push({k:"choice", q:n.q, ans:o.label, favor:o.favor});
   // 把 branch 节点插到 choice 之后
   if(o.branch && o.branch.length){
     state.queue.splice(state.idx+1, 0, ...o.branch);
   }
   state.idx++; // 越过 choice，进入 branch
-  save();
+  saveNow();   // 选项是节点，立刻落盘
   renderNode();
 }
 
@@ -568,17 +730,9 @@ function typewriter(text){
 }
 
 /* ============================================================
-   九、结算（正篇结局 / 番外结局）
+   十、结算（正篇结局 / 番外结局）
    ============================================================ */
-const ENDING_META = {
-  he:     { name:"HE · 《驯刀》",        line:"郑维成落网，父亲的案子翻了。" },
-  normal: { name:"普通 · 《各自过冬》",  line:"真相大白，两个人却各自走了一个方向。" },
-  be:     { name:"BE · 《野狗的死法》",  line:"他一个人去把那笔债讨完了。" },
-  hidden: { name:"隐藏 · 《老万的十年》", line:"一封没寄出去的信。" }
-};
-
 function logHtml(){
-  // 选择回溯里只列选项本身，不暴露每个选项的好感加减
   return (state.log||[]).map(l=>{
     if(l.k==="quiz") return `<div class="log-row"><span class="log-tag">登记</span> ${l.id.toUpperCase()} → ${l.ans}</div>`;
     if(l.k==="choice") return `<div class="log-row"><span class="log-tag">选择</span> ${l.ans}</div>`;
@@ -586,43 +740,61 @@ function logHtml(){
   }).join("");
 }
 
+/* 结局页的三个数值复盘 */
+function statBlock(){
+  const f = state.favor||0, d = state.danger||0, c = state.clue||0;
+  const dots = [0,1,2,3,4].map(i=>`<b class="${i<c?'on':''}"></b>`).join("");
+  return `
+    <div class="end-sub">这一周目的账</div>
+    <div class="end-stats">
+      <div class="es-row"><span class="es-k">好感</span><span class="es-bar"><i style="width:${f}%"></i></span><span class="es-v">${f} / ${FAVOR_MAX}</span></div>
+      <div class="es-row"><span class="es-k">执念</span><span class="es-bar"><i class="hot" style="width:${d}%"></i></span><span class="es-v">${d} / ${DANGER_MAX}</span></div>
+      <div class="es-row"><span class="es-k">线索</span><span class="es-dots">${dots}</span><span class="es-v">${c} / ${CLUE_MAX}</span></div>
+    </div>`;
+}
+
 function showEnd(){
-  const isExtra = state.mode === "extra";
-  if(isExtra) return showExtraEnd();
+  if(state.mode === "extra") return showExtraEnd();
 
   state.screen = "end";
   applyChar(null);
-  const e = state.ending || { type:"normal", line: state.line };
-  const meta = ENDING_META[e.type] || ENDING_META.normal;
+  const id = (state.ending && state.ending.id) || (state.line + ":normal");
+  const meta = endingOf(id) || { name:"结局", brief:"", desc:"", type:"normal", line:state.line };
+  const type = meta.type || "normal";
 
   // 收集结算
-  const firstTime = !progress.endings[e.type];
-  progress.endings[e.type] = true;
+  const firstTime = !progress.endings[id];
+  progress.endings[id] = true;
   progress.lines[state.line] = true;
   if(!progress.ends) progress.ends = {};
-  progress.ends[state.line + ":" + e.type] = true;   // 单条线的结局进度（彩蛋解锁用）
-  if(e.type === "he") progress.he[state.line] = true;
+  progress.ends[id] = true;
+  if(type === "he") progress.he[state.line] = true;
+  progress.peakFavor = Math.max(progress.peakFavor||0, state.favor||0);
   if(!state.done){ progress.clears = (progress.clears||0) + 1; state.done = true; }
-  saveCol();
+  saveCol(); flushRead();
   const newly = checkTitles();
+  const done = lineEndsCount(state.line), total = lineEndingIds(state.line).length;
   const lineDone = lineEndsDone(state.line);
+  const extraHint = state.line === "jiang" ? "《烟花》" : "《居家情事》";
 
   document.getElementById('stage').innerHTML = `
     <div class="end-wrap">
-      <div class="end-kicker">${firstTime ? "结局解锁" : "结局回顾"}</div>
+      <div class="end-kicker">${firstTime ? "新结局解锁" : "结局回顾"} · ${done} / ${total}</div>
       <div class="end-title">${meta.name}</div>
-      <div class="end-line">${meta.line}</div>
+      <div class="end-line">${meta.desc || meta.brief || ""}</div>
       ${newly.length ? `<div class="unlock-box">
           <div class="unlock-head">称号解锁</div>
           ${newly.map(t=>`<div class="unlock-row"><b>${t.name}</b><span>${t.desc}</span></div>`).join('')}
         </div>` : ''}
+      ${statBlock()}
       <div class="end-sub">选择回溯</div>
       <div class="end-log">${logHtml() || '<div class="log-row">（本条线没有留下记录）</div>'}</div>
       <div class="end-note">${lineDone
-        ? `这条线的三个结局都走完了。番外篇里多了一页手稿——${state.line === "jiang" ? "《烟花》" : "《居家情事》"}。`
-        : `这条线还差 ${3 - lineEndsCount(state.line)} 个结局。HE / 普通 / BE 三个都走完，番外篇会多一页手稿。`}</div>
+        ? `这条线的六个结局都走完了。番外篇里多了一页手稿——${extraHint}。`
+        : `这条线还差 ${total - done} 个结局。六个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}</div>
       <div class="btn-row">
-        <button class="btn primary" onclick="showExtras()">番外篇</button>
+        ${id === "hidden:laowan" ? '<button class="btn primary" onclick="startExtra(\'laowan\')">读那封信 · 《老万的十年》</button>' : ''}
+        <button class="btn ${id==='hidden:laowan'?'':'primary'}" onclick="showExtras()">番外篇</button>
         <button class="btn" onclick="showLineSelect()">开另一条线</button>
         <button class="btn ghost" onclick="clearSave();showLineSelect()">重玩本线</button>
         <button class="btn ghost" onclick="showTitle()">返回封面</button>
@@ -637,18 +809,25 @@ function showExtraEnd(){
   const key = state.extraKey;
   const ex = (STORY.extras||{})[key] || { title:"番外" };
   progress.extras[key] = true;
-  if(key === "laowan") progress.endings.hidden = true;
-  saveCol();
+  // 两个隐藏结局是「番外形态的结局」，读完登记进结局表
+  if(key === "laowan")  progress.ends["hidden:laowan"] = true;
+  if(key === "platform") progress.ends["hidden:platform"] = true;
+  if(key === "laowan")  progress.endings["hidden:laowan"] = true;
+  if(key === "platform") progress.endings["hidden:platform"] = true;
+  saveCol(); flushRead();
   const newly = checkTitles();
+  const tail = {
+    laowan: "他把这十年写下来了。没寄出去。",
+    platform: "她往南，他往北。谁也没认出谁。",
+    yanhua: "爆竹还在响。雪落在两个人身上，谁也没动。",
+    jujia: "灯一直亮着。这一次，没有人假装没看见。",
+    s2: "柜子里那一条，终于戴上了。"
+  }[key] || "刀还在。刀柄在你手里。";
   document.getElementById('stage').innerHTML = `
     <div class="end-wrap">
       <div class="end-kicker">番外</div>
       <div class="end-title">《${ex.title}》 · 完</div>
-      <div class="end-line">${
-        key==="laowan" ? "他把这十年写下来了。没寄出去。" :
-        key==="yanhua" ? "爆竹还在响。雪落在两个人身上，谁也没动。" :
-        key==="jujia" ? "灯一直亮着。这一次，没有人假装没看见。" :
-        "刀还在。刀柄在你手里。"}</div>
+      <div class="end-line">${tail}</div>
       ${newly.length ? `<div class="unlock-box">
           <div class="unlock-head">称号解锁</div>
           ${newly.map(t=>`<div class="unlock-row"><b>${t.name}</b><span>${t.desc}</span></div>`).join('')}
@@ -663,9 +842,8 @@ function showExtraEnd(){
 }
 
 /* ============================================================
-   九·五、鸣谢与版权
+   十·五、鸣谢与版权
    ============================================================ */
-/* 素材页链接：显示成「站点 / 曲名」，完整地址仍在 href 里 */
 function siteOf(u){
   if(u.includes("opengameart.org")) return "opengameart.org";
   if(u.includes("freemusicarchive.org")) return "freemusicarchive.org";
@@ -745,29 +923,53 @@ function showCredits(){
 }
 
 /* ============================================================
-   十、番外
+   十一、番外
    ============================================================ */
 function extraUnlocked(key){
   const ex = (STORY.extras||{})[key];
   if(!ex) return false;
-  if(ex.cond === "bothHE") return !!(progress.he.wan && progress.he.jiang);
-  if(ex.cond === "anyHE")  return !!(progress.he.wan || progress.he.jiang);
-  if(ex.cond === "wanAllEnds")   return lineEndsDone("wan");
-  if(ex.cond === "jiangAllEnds") return lineEndsDone("jiang");
-  if(ex.cond === "clear")  return (progress.clears || 0) > 0 || Object.keys(progress.endings||{}).length > 0;
-  return true;
+  const e = progress.ends || {};
+  switch(ex.cond){
+    case "bothHE":  return !!(progress.he.wan && progress.he.jiang);
+    case "anyHE":   return !!(progress.he.wan || progress.he.jiang);
+    /* 《老万的十年》三条路：双线 HE ／ 两线都 BE ／ 正篇里线索查满好感 85+ */
+    case "hiddenLaowan":
+      return !!( (progress.he.wan && progress.he.jiang) || (e["wan:be"] && e["jiang:be"]) || e["hidden:laowan"] );
+    case "bothCold":
+      return !!(e["wan:cold"] && e["jiang:cold"]);
+    case "wanAllEnds":   return lineEndsDone("wan");
+    case "jiangAllEnds": return lineEndsDone("jiang");
+    case "clear":  return (progress.clears || 0) > 0 || Object.keys(progress.endings||{}).length > 0;
+    default: return true;
+  }
 }
-/* 未解锁时给玩家看条件：单线全结局类附上 0/3 进度 */
+/* 老万那条「三条路」走了几条 */
+function laowanRoutes(){
+  const e = progress.ends || {};
+  let n = 0;
+  if(progress.he.wan && progress.he.jiang) n++;
+  if(e["wan:be"] && e["jiang:be"]) n++;
+  if(e["hidden:laowan"]) n++;
+  return n;
+}
 function extraCondText(key){
   const ex = (STORY.extras||{})[key] || {};
   if(ex.cond === "wanAllEnds" || ex.cond === "jiangAllEnds"){
     const line = ex.cond === "wanAllEnds" ? "wan" : "jiang";
-    return `${ex.condText}（已走完 ${lineEndsCount(line)} / 3）`;
+    return `${ex.condText}（已走完 ${lineEndsCount(line)} / ${lineEndingIds(line).length}）`;
+  }
+  if(ex.cond === "hiddenLaowan"){
+    return `${ex.condText}（三条路已达成 ${laowanRoutes()} / 3）`;
+  }
+  if(ex.cond === "bothCold"){
+    const e = progress.ends || {};
+    const a = e["wan:cold"] ? "✓" : "·", b = e["jiang:cold"] ? "✓" : "·";
+    return `${ex.condText}（万宁 ${a} / 江野 ${b}）`;
   }
   return ex.condText || "尚未解锁";
 }
 function showExtras(){
-  loadCol();                                   // 刷新解锁状态（番外条件依赖单线结局进度）
+  loadCol();                                   // 刷新解锁状态（番外条件依赖结局进度）
   const list = Object.keys(STORY.extras||{});
   const items = list.map(k=>{
     const ex = STORY.extras[k];
@@ -810,13 +1012,13 @@ function startExtra(key){
 }
 
 /* ============================================================
-   十一、图鉴
+   十二、图鉴
    ============================================================ */
 let galleryTab = "bg";
 function showGallery(tab){
   if(tab) galleryTab = tab;
   loadCol();
-  const g = STORY.gallery || {bg:{},char:{},lore:[],ending:[]};
+  const g = STORY.gallery || {bg:{},char:{},lore:[]};
   const f = galleryFound(), c = galleryCount();
   const tabs = [
     ["bg","场景", f.bg, c.bg],
@@ -866,12 +1068,13 @@ function showGallery(tab){
   }
 
   if(galleryTab === "ending"){
-    body = `<div class="ex-list">` + g.ending.map(e=>{
+    const lineName = { wan:"万宁线", jiang:"江野线", hidden:"隐藏" };
+    body = `<div class="ex-list">` + endingList().map(e=>{
       const ok = !!progress.endings[e.id];
       return `<div class="ex-card ${ok?'':'locked'}">
         <div class="ex-top"><div class="ex-name">${ok?e.name:'？？？'}</div>
-        <div class="ex-sub">${ok?'已达成':'未达成'}</div></div>
-        <div class="ex-desc">${ok?e.desc:'还没有走到这个结局。'}</div>
+        <div class="ex-sub">${lineName[e.line] || ""}${ok?' · 已达成':' · 未达成'}</div></div>
+        <div class="ex-desc">${ok?e.desc:'解锁条件：'+e.hint}</div>
       </div>`;
     }).join('') + `</div>`;
   }
@@ -889,7 +1092,7 @@ function showGallery(tab){
 }
 
 /* ============================================================
-   十二、称号
+   十三、称号
    ============================================================ */
 function showTitles(){
   loadCol();
@@ -921,18 +1124,14 @@ function showTitles(){
 }
 
 /* ============================================================
-   十三、键盘 / 全局点击
+   十四、键盘 / 全局点击
    ============================================================ */
 document.addEventListener('keydown', e=>{
   if(!state || state.screen!=="story") return;
   if(e.code==="Space" || e.code==="Enter"){ e.preventDefault(); advance(); }
 });
 
-/* 全屏点击推进文字：
-   - 仅在正文推进阶段响应
-   - 选项节点不响应（避免误触跳过选项）
-   - 点按钮不响应
-*/
+/* 全屏点击推进文字：选项与结算页不响应（避免误触跳过选项） */
 document.addEventListener('click', e=>{
   if(!state || state.screen!=="story") return;
   if(e.target.closest('button')) return;
@@ -944,9 +1143,10 @@ document.addEventListener('click', e=>{
 });
 
 /* ============================================================
-   十四、启动
+   十五、启动
    ============================================================ */
 window.addEventListener('load', ()=>{ loadCol(); showTitle(); ageNotice(); });
+window.addEventListener('beforeunload', ()=>{ flushSave(); flushRead(); });
 
 /* ---------- 自动测试用（外部读取当前状态，不在界面上露出） ---------- */
 function __getState(){ return state; }

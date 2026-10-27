@@ -142,7 +142,18 @@ function render(nodes, d, opt = {}){
           let cond;
           if (c.ifFlag) cond = `若标记 ${c.ifFlag} ${c.flagVal === undefined || c.flagVal === true ? "已触发" : "= " + c.flagVal}`;
           else if (c.else) cond = "其余情况";
+          else if (c.if) {
+            const x = c.if, bits = [];
+            if (x.favorMin  !== undefined) bits.push(`好感 ≥ ${x.favorMin}`);
+            if (x.favorMax  !== undefined) bits.push(`好感 ≤ ${x.favorMax}`);
+            if (x.dangerMin !== undefined) bits.push(`执念 ≥ ${x.dangerMin}`);
+            if (x.dangerMax !== undefined) bits.push(`执念 ≤ ${x.dangerMax}`);
+            if (x.clueMin   !== undefined) bits.push(`线索 ≥ ${x.clueMin}`);
+            if (x.clueMax   !== undefined) bits.push(`线索 ≤ ${x.clueMax}`);
+            cond = "若 " + bits.join(" 且 ");
+          }
           else cond = `若好感 ≥ ${c.min}`;
+          if (c.ending) cond += `　→　${((S.endings || {})[c.ending] || {}).name || c.ending}`;
           out.push(head(d, `##### 情况 ${idx}｜${cond}`));
           renderBlock(c.branch, d + 1, opt);
         }
@@ -338,10 +349,12 @@ for (const e of S.gallery.lore){
   doc.push(`- **${e.name}**（触发词：${e.kw.join(" / ")}）：${e.desc}`);
 }
 doc.push("");
-doc.push("### 结局");
+doc.push("### 结局（14 个）");
 doc.push("");
-for (const e of S.gallery.ending){
-  doc.push(`- **${e.name}**：${e.desc}`);
+for (const id of Object.keys(S.endings || {})){
+  const e = S.endings[id];
+  doc.push(`- **${e.name}**（\`${id}\`）：${e.desc}`);
+  doc.push(`  - 条件：${e.hint}`);
 }
 doc.push("");
 doc.push("---");
@@ -355,10 +368,13 @@ doc.push("|---|---|");
 const COND_CN = {
   anyEnding: "走完任意一个结局", normalEnd: "达成普通结局", beEnd: "达成 BE",
   wanHE: "万宁线 HE", jiangHE: "江野线 HE", bothLines: "两条线都走过",
-  wanAllEnds: "万宁线三个结局走完", jiangAllEnds: "江野线三个结局走完",
+  wanAllEnds: "万宁线六个结局走完", jiangAllEnds: "江野线六个结局走完",
   lore8: "档案 ≥ 8 条", allGallery: "图鉴全收", laowan: "读完《老万的十年》",
-  jujia: "读完《居家情事》", yanhua: "读完《烟花》", rawread: "两篇手稿彩蛋都读完",
-  allEndings: "四个结局全解锁"
+  platformEnd: "读完《同一个站台》", jujia: "读完《居家情事》", yanhua: "读完《烟花》",
+  rawread: "两篇手稿彩蛋都读完", allEndings: "十四个结局全解锁",
+  wanEmber: "走到《灯亮着》", wanClean: "走到《没有一个人是干净的》",
+  jiangScar: "走到《手上有雪》", jiangEmpty: "走到《空房间》",
+  peakFavor: "单周目好感推到 100"
 };
 for (const t of S.titles){
   doc.push(`| **${t.name}** | ${t.desc} |`);
