@@ -124,6 +124,7 @@ function giftCodes(){
   return ((STORY.gift && STORY.gift.codes) || []).map(normCode);
 }
 function openGift(){
+  if(!giftCodes().length) return;          // 作者没设码，就当没这个功能
   closeGift();
   const tip = (STORY.gift && STORY.gift.tip) || "输入福利码，解锁全部图鉴、番外与称号。";
   const m = document.createElement("div");
@@ -440,6 +441,7 @@ function showTitle(){
   const tGot = Object.keys(progress.titles||{}).length;
   const extrasUnlockedN = (STORY.extras ? Object.keys(STORY.extras).filter(k=>extraUnlocked(k)).length : 0);
   const extrasTotal = STORY.extras ? Object.keys(STORY.extras).length : 0;
+  const hasGift = ((STORY.gift && STORY.gift.codes) || []).length > 0;   // 码表空 = 入口隐藏
 
   document.getElementById('stage').innerHTML = `
     <div class="cover">
@@ -462,8 +464,8 @@ function showTitle(){
         <div class="cover-devlink">
           <a href="javascript:void(0)" onclick="showCredits()">鸣谢与版权</a>
           <span class="sep">·</span>
-          <a href="javascript:void(0)" onclick="openGift()">福利码${progress.gift ? "（已兑换）" : ""}</a>
-          <span class="sep">·</span>
+          ${hasGift ? `<a href="javascript:void(0)" onclick="openGift()">福利码${progress.gift ? "（已兑换）" : ""}</a>
+          <span class="sep">·</span>` : ""}
           <a href="javascript:void(0)" onclick="resetCol()">清空收集记录</a>
         </div>
       </div>

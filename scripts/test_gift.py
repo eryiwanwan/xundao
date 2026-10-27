@@ -58,6 +58,22 @@ with sync_playwright() as p:
     before = pg.evaluate(STATE)
     print(" 兑换前:", before)
 
+    # 0) 码表从页面里读，改了码这个测试也不用动
+    codes = pg.evaluate("() => (STORY.gift && STORY.gift.codes) || []")
+    print(" 码表:", codes)
+    if not codes:
+        print(" 码表是空的（作者没设码）——这一步跳过，只验证入口已隐藏")
+        hidden = pg.eval_on_selector_all('.cover-devlink a:has-text("福利码")', "els => els.length")
+        if hidden != 0:
+            fails.append("码表为空时封面仍显示福利码入口")
+        b.close()
+        if httpd: httpd.shutdown()
+        print("\n失败项:", len(fails))
+        for f in fails: print("  ✗", f)
+        sys.exit(1 if fails else 0)
+    good = codes[0]
+    bad  = "ZZZ" + good
+
     # 1) 打开弹窗
     pg.click('.cover-devlink a:has-text("福利码")')
     pg.wait_for_timeout(400)
@@ -65,7 +81,7 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(OUT, "gift_01_input.png"))
 
     # 2) 错码
-    pg.fill("#gift-input", "XUNDAO2025")
+    pg.fill("#gift-input", bad)
     pg.click('#gift-mask button:has-text("兑换")')
     pg.wait_for_timeout(300)
     msg = pg.inner_text("#gift-err")
@@ -78,7 +94,7 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(OUT, "gift_02_wrong.png"))
 
     # 3) 对码（故意打小写 + 连字符，验证归一化）
-    pg.fill("#gift-input", " xundao-2026 ")
+    pg.fill("#gift-input", " " + good.lower() + " ")
     pg.click('#gift-mask button:has-text("兑换")')
     pg.wait_for_timeout(600)
     after = pg.evaluate(STATE)

@@ -51,7 +51,15 @@ style.css  ← 样式（六档断点，桌面 / iPad / 手机）
 
 存档在 `localStorage`：`xundao_demo_v2`（剧情）/ `xundao_collect_v1`（跨周目收集）/ `xundao_read_v1`（已读指纹，跳过已读用）/ `xundao_skip_v1`（跳过已读开关）/ `xundao_ageack_v1`（年龄确认）。
 
-福利码的码表写在 `story.js` 的 `gift.codes`（改码不用碰引擎），兑换记录落在收集档的 `gift` 字段，不额外占 key。
+福利码的码表在 `story.js` 的 `gift.codes`，换码有一条命令（不用碰引擎）：
+
+```bash
+python scripts/set_gift.py 你的新码     # 设成这一个；多个码用空格隔开，都认
+python scripts/set_gift.py --show      # 看现在是什么
+python scripts/set_gift.py --off       # 清空码表，封面入口一起隐藏
+```
+
+脚本会顺手把 `index.html` 的 `?v=` 加一档。规则：4–24 个字符，中英文数字都行；玩家输入时不分大小写、不认空格和连字符、全角半角等价。兑换记录落在收集档的 `gift` 字段，不额外占 key。
 
 > 改完 `game/` 里的 js / css，记得把 `game/index.html` 里那几个 `?v=011` 一起加一档——GitHub Pages 的缓存比想象中顽固，不加会出现「代码改了但玩家看到的还是旧的」。
 
