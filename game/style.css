@@ -259,6 +259,9 @@ body{
   font-size: clamp(13px, 1.15vw, 15px); line-height: 1.95; letter-spacing: .05em;
   color: #b4ac9d; max-width: 30em; margin: 0 auto clamp(22px, 4.4vh, 38px);
 }
+/* 引文固定两行：第一行短、第二行长，压成一个稳的梯形 */
+.cover-quote span{ display: block; }
+.cover-quote span + span{ margin-top: .15em; }
 
 /* 按钮 */
 .cover-btns{

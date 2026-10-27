@@ -45,6 +45,8 @@ function flushSave(){
   if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
   if(!saveDirty || !state) return;
   saveDirty = false;
+  // 番外 / 彩蛋不占主线存档：否则读完番外，「继续上次」会掉进番外结尾
+  if(state.mode === "extra") return;
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
 }
 function saveNow(){ saveDirty = true; flushSave(); }
@@ -454,7 +456,7 @@ function showTitle(){
         </div>
         <h1 class="cover-title">${STORY.meta.title}</h1>
         <div class="cover-rule"></div>
-        <div class="cover-quote">雾川的雪落下来，没有一个人是干干净净地走的。</div>
+        <div class="cover-quote"><span>雾川的雪落下来，</span><span>没有一个人是干干净净地走的。</span></div>
         <div class="cover-btns">
           ${cont ? '<button class="btn primary" onclick="startContinue()">继续上次</button>' : ''}
           <button class="btn ${cont?'':'primary'}" onclick="showLineSelect()">${cont?'新的开始':'开始'}</button>
@@ -685,7 +687,8 @@ function renderNode(){
     if(n.t==="end"){ showEnd(); return; }
     if(n.t==="text"){
       // 读过就掠过（选项永远不跳）
-      if(skipRead && isRead(n.txt)){ state.idx++; save(); continue; }
+      // 番外 / 彩蛋不套用「跳过已读」：玩家是主动点进来重读的，跳过就等于不让读
+      if(skipRead && state.mode !== "extra" && isRead(n.txt)){ state.idx++; save(); continue; }
       renderText(n); return;
     }
     if(n.t==="choice"){ renderChoice(n); return; }
@@ -785,6 +788,7 @@ function renderText(n){
 /* 兜底：万一某条分支忘了写 ending，就靠标题文字认（正常情况用不到） */
 const ENDING_TEXT_MAP = [
   { re: /^HE · 《驯刀》/,              id: "he" },
+  { re: /^HE · 《我留下》/,            id: "he" },
   { re: /^普通结局 · 《各自过冬》/,     id: "normal" },
   { re: /^BE · 《野狗的死法》/,         id: "be" },
   { re: /^暗结局 · 《没有一个人是干净的》/, id: "wan:clean" },
@@ -983,6 +987,7 @@ function showExtraEnd(){
       <div class="end-note">已收录到番外列表。</div>
       <div class="btn-row">
         <button class="btn primary" onclick="showExtras()">番外列表</button>
+        <button class="btn" onclick="startExtra('${key}')">再读一遍</button>
         <button class="btn ghost" onclick="showTitle()">返回封面</button>
       </div>
     </div>`;
@@ -1129,7 +1134,7 @@ function showExtras(){
       <div class="ex-card ${ok?'':'locked'}" ${ok?`onclick="startExtra('${k}')"`:''}>
         <div class="ex-top">
           <div class="ex-name">${ok ? ex.title : "？？？"}</div>
-          <div class="ex-sub">${ex.sub}${read?' · 已读':''}</div>
+          <div class="ex-sub">${ex.sub}${read?' · 已读，可重读':''}</div>
         </div>
         <div class="ex-desc">${ok ? ex.desc : extraCondText(k)}</div>
         ${ok ? '<div class="ex-go">进入 →</div>' : '<div class="ex-lock">未解锁</div>'}
@@ -1151,6 +1156,7 @@ function showExtras(){
 function startExtra(key){
   if(!extraUnlocked(key)) return;
   const ex = STORY.extras[key];
+  if(state && state.mode !== "extra") flushSave();   // 主线进度先落盘，别被番外顶掉
   state = freshState("wan", "extra");
   state.extraKey = key;
   state.screen = "story";

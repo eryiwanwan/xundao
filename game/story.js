@@ -40,7 +40,7 @@ const STORY = {
   meta: {
     title: "驯刀",
     subtitle: "现代 · 恋爱主线 + 悬疑催化 · 双视角",
-    version: "Demo 0.16（18+ 正式版 · 21 结局 · 14 个选择点 · 单周目 1.7 万字 · 好感 × 执念 × 线索）",
+    version: "Demo 0.17（18+ 正式版 · 21 结局 · 14 个选择点 · 单周目 1.7 万字 · 好感 × 执念 × 线索）",
     lineNames: { wan: "万宁线 · 驯化与救赎", jiang: "江野线 · 复仇与沦陷" }
   },
 
@@ -80,7 +80,7 @@ const STORY = {
 
   /* ================= 结局表（20 个） =================
      一条线的九个结局 = 好感 × 执念 × 线索 三个数一起判：
-       好感 80+ 线索 4+ 执念 40 以下 → HE《驯刀》
+       好感 80+ 线索 4+ 执念 40 以下 → HE（女主线《驯刀》／男主线《我留下》）
        好感 80+ 执念 40+            → 暗结局（人留下了，手脏了）
        好感 80+ 线索不足            → 温和结局（人留下了，案子没翻完）
        好感 50–71 + 线索够          → 普通结局《各自过冬》
@@ -159,7 +159,7 @@ const STORY = {
 
     "jiang:he": {
       line: "jiang", type: "he",
-      name: "HE · 《驯刀》",
+      name: "HE · 《我留下》",
       brief: "郑维成落网，他把「我留下」说了出口。",
       desc: "郑维成落网，父亲的案子翻了。他把「我留下」说了出口，六年里第一次。",
       hint: "好感 72 以上、线索 3 条以上，执念压在 40 以下"
@@ -3519,7 +3519,7 @@ const STORY = {
           { t: "bg", c: "#0a0c10" },
           { t: "bgm", key: "aftermath" },
           { t: "char", who: null },
-          { t: "text", cls: "letter", txt: "HE · 《驯刀》" },
+          { t: "text", cls: "letter", txt: "HE · 《我留下》" },
           { t: "text", txt: "正月十五。郑维成被带走那天，下雪。你和她站在那栋写字楼下面。她抬头看天台。" },
           { t: "text", sp: "万宁", txt: "他没走完。你和他一起走完了。我爸没走完的，我和他一起走完了。" },
           { t: "bgimg", key: "rooftop_dusk" },
@@ -3855,7 +3855,7 @@ const STORY = {
       title: "烟花",
       sub: "彩蛋 · 江野线 HE",
       cond: "jiangHE",
-      condText: "江野线达成 HE《驯刀》后解锁",
+      condText: "江野线达成 HE《我留下》后解锁",
       desc: "新年那晚，台阶上的另一段。他把这一夜过完了。作者原稿，一字未删。",
       nodes: []
     },
@@ -3930,7 +3930,7 @@ const STORY = {
     { id: "passerby", name: "过路人",   cond: "anyEnding",   desc: "走完任意一条线的任意一个结局。" },
     { id: "winter",   name: "各自过冬", cond: "normalEnd",   desc: "达成普通结局《各自过冬》。" },
     { id: "sheath",   name: "刀在鞘里", cond: "wanHE",       desc: "万宁线达成 HE《驯刀》。" },
-    { id: "stay",     name: "留下",     cond: "jiangHE",     desc: "江野线达成 HE《驯刀》。" },
+    { id: "stay",     name: "留下",     cond: "jiangHE",     desc: "江野线达成 HE《我留下》。" },
     { id: "stray",    name: "野狗",     cond: "beEnd",       desc: "达成 BE《野狗的死法》。这个称号不体面，但很重。" },
     { id: "twosides", name: "双面雾川", cond: "bothLines",   desc: "两条线都走过一遍。" },
     { id: "wanall",   name: "刀柄",     cond: "wanAllEnds",  desc: "万宁线的九个结局全部走完。赢的、散的、死的、脏的，刀柄始终在她手里。" },
