@@ -21,7 +21,7 @@ const S = ctx.STORY;
 
 const T = {
   wan:   { high: 72, darkD: 40, heC: 4, normalF: 50, lowF: 28, burnD: 52, coldD: 36, splitC: 4, hiddenF: 85 },
-  jiang: { high: 72, darkD: 40, heC: 3, normalF: 50, lowF: 28, burnD: 66, coldD: 42, splitC: 3, hiddenF: 85 }
+  jiang: { high: 72, darkD: 44, heC: 3, normalF: 50, lowF: 28, burnD: 72, coldD: 46, splitC: 3, hiddenF: 85 }
 };
 
 const head = [

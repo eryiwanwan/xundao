@@ -131,8 +131,14 @@ for (const line of LINES){
   let runs = 0, sumW = 0, sumS = 0, minW = 1e9, maxW = 0, minS = 1e9, maxS = 0;
   const byEnding = {}, segAll = [];
 
+  /* 选择点变多以后路径数会到 50 万级，均匀抽样跑得动，统计口径不变 */
+  const MAXRUNS = 40000;
+  const step = Math.max(1, Math.floor(total / MAXRUNS));
+  const nRun = Math.ceil(total / step);
+
   for (const qp of quizPlans(line)){
-    for (let t = 0; t < total; t++){
+    for (let ri = 0; ri < nRun; ri++){
+      const t = ri * step;
       let x = t; const cp = [];
       for (let j = 0; j < nChoice; j++){ cp.push(x % optsLen[j]); x = Math.floor(x / optsLen[j]); }
       const r = walk(line, qp, cp);
@@ -171,6 +177,7 @@ for (const line of LINES){
 
   console.log("=".repeat(58));
   console.log(`${line} 线 | ${nChoice} 个选择点 | 走读 ${runs} 条路径`);
+  console.log(`  （路径总数 ${total}，抽样步长 ${step}）`);
   console.log(`  正文总共 ${seenCount.size} 句 / ${uniqChars} 字`);
   console.log(`  主干（每条必读）${trunk} 句 / ${trunkChars} 字  ← 占字数 ${(trunkChars / uniqChars * 100).toFixed(0)}%`);
   console.log(`  分支旁支        ${branch} 句 / ${uniqChars - trunkChars} 字  ← 占字数 ${((1 - trunkChars / uniqChars) * 100).toFixed(0)}%`);
