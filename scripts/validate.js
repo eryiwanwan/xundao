@@ -1,6 +1,6 @@
 /* validate.js —— 无浏览器的端到端走读（0.9 版）
    1. 载入 story.js + eggs.js + engine.js 到 vm 沙箱（DOM 全部打桩）
-   2. 穷举两条线的所有选择组合（3^6 种 × 3 种问卷策略），验证 18 个结局全部可达
+   2. 穷举两条线的所有选择组合（3^8 / 混选项数 × 4 种问卷策略），验证 20 个结局全部可达
    3. 验证隐藏结局《老万的十年》三条路都能开
    4. 验证番外 / 图鉴 / 称号 / 跳过已读 / 数值上限
 */
@@ -64,9 +64,9 @@ const endIds = Object.keys(endings);
 console.log(`=== 结局表 ${endIds.length} 个 ===`);
 endIds.forEach(id => console.log(` ${id.padEnd(16)} ${endings[id].name}`));
 
-want(endIds.length === 18, "结局总数应为 18，当前 " + endIds.length);
-want(endIds.filter(id => id.startsWith("wan:")).length === 8, "万宁线应有 8 个结局");
-want(endIds.filter(id => id.startsWith("jiang:")).length === 8, "江野线应有 8 个结局");
+want(endIds.length === 20, "结局总数应为 20，当前 " + endIds.length);
+want(endIds.filter(id => id.startsWith("wan:")).length === 9, "万宁线应有 9 个结局");
+want(endIds.filter(id => id.startsWith("jiang:")).length === 9, "江野线应有 9 个结局");
 want(endIds.filter(id => id.startsWith("hidden:")).length === 2, "隐藏结局应有 2 个");
 
 /* 每个结局都要有 name / desc / hint */
@@ -168,19 +168,92 @@ function run(line, quizPlan, choicePlan) {
   return { id: null, bad: "timeout", steps };
 }
 
+/* ---------- 静态走读（不碰引擎/DOM，比沙箱快两个数量级） ---------- */
+function caseOk(c, st){
+  const f = st.favor, d = st.danger, cu = st.clue, fl = st.flags;
+  if (c.ifFlag){
+    const want = (c.flagVal === undefined ? true : c.flagVal);
+    if ((!!fl[c.ifFlag]) !== want) return false;
+    if (!c.if) return true;
+  }
+  if (c.else) return true;
+  if (c.if){
+    const x = c.if;
+    if (x.favorMin  !== undefined && f  < x.favorMin)  return false;
+    if (x.favorMax  !== undefined && f  > x.favorMax)  return false;
+    if (x.dangerMin !== undefined && d  < x.dangerMin) return false;
+    if (x.dangerMax !== undefined && d  > x.dangerMax) return false;
+    if (x.clueMin   !== undefined && cu < x.clueMin)   return false;
+    if (x.clueMax   !== undefined && cu > x.clueMax)   return false;
+    return true;
+  }
+  if (c.min !== undefined) return f >= c.min;
+  return false;
+}
+const clampNum = (v, a, b) => Math.max(a, Math.min(b, v));
+function swalk(line, quizPlan, choicePlan){
+  const Qs = S.quiz[line];
+  const st = { favor: 0, danger: 20, clue: 0, flags: {}, profile: {} };
+  Qs.forEach((q, i) => {
+    const k = quizPlan[i] || 0;
+    const o = q.opts[k] || q.opts[0];
+    st.profile[q.id] = String.fromCharCode(65 + k);
+    st.favor += o.favor || 0; st.danger += o.danger || 0; st.clue += o.clue || 0;
+  });
+  st.favor = clampNum(st.favor, 0, 100);
+  st.danger = clampNum(st.danger, 0, 100);
+  st.clue = clampNum(st.clue, 0, 5);
+
+  const queue = S.lines[line].slice();
+  let idx = 0, ci = 0, guard = 0, texts = 0, ending = null;
+  while (idx < queue.length && guard++ < 20000){
+    const n = queue[idx];
+    if (n.t === "qvar"){ queue.splice(idx, 1, ...((n.map && n.map[st.profile[n.by]]) || [])); continue; }
+    if (n.t === "flag"){
+      st.flags[n.key] = (n.val === undefined ? true : n.val);
+      idx++; continue;
+    }
+    if (n.t === "text"){ texts++; idx++; continue; }
+    if (n.t === "choice"){
+      let k = choicePlan[ci++] ?? 0;
+      if (k >= n.opts.length) k = n.opts.length - 1;
+      const o = n.opts[k];
+      st.favor  = clampNum(st.favor  + (o.favor  || 0), 0, 100);
+      st.danger = clampNum(st.danger + (o.danger || 0), 0, 100);
+      st.clue   = clampNum(st.clue   + (o.clue   || 0), 0, 5);
+      if (o.branch && o.branch.length) queue.splice(idx + 1, 0, ...o.branch);
+      idx++; continue;
+    }
+    if (n.t === "endcheck"){
+      const hit = n.cases.find(c => caseOk(c, st));
+      if (hit){
+        if (hit.ending) ending = hit.ending.includes(":") ? hit.ending : line + ":" + hit.ending;
+        if (hit.branch && hit.branch.length) queue.splice(idx + 1, 0, ...hit.branch);
+      }
+      idx++; continue;
+    }
+    if (n.t === "end") break;
+    idx++;
+  }
+  if (!ending) ending = line + ":normal";
+  return { id: ending, favor: st.favor, danger: st.danger, clue: st.clue, texts };
+}
+
 const found = { wan: new Set(), jiang: new Set() };
 const statRange = { wan: {}, jiang: {} };
 let crashes = 0;
 
 for (const line of ["wan", "jiang"]) {
-  const nChoice = choiceCount(line);
-  const plans = cartesian(nChoice, 3);
+  const optsLen = S.lines[line].filter(n => n.t === "choice").map(n => n.opts.length);
+  const total = optsLen.reduce((a, k) => a * k, 1);
   let runs = 0;
   for (const qp of quizPlans(line)) {
-    for (const cp of plans) {
-      const r = run(line, qp.plan, cp);
+    for (let t = 0; t < total; t++) {
+      let x = t; const cp = [];
+      for (let j = 0; j < optsLen.length; j++) { cp.push(x % optsLen[j]); x = Math.floor(x / optsLen[j]); }
+      const r = swalk(line, qp.plan, cp);
       runs++;
-      if (r.bad) { crashes++; if (crashes < 4) console.log(` ✗ ${line} 走读异常 ${r.bad}（${qp.name} / ${cp.join("")}）`); continue; }
+      if (!r || !r.id) { crashes++; if (crashes < 4) console.log(` ✗ ${line} 走读异常（${qp.name} / ${cp.join("")}）`); continue; }
       found[line].add(r.id);
       const key = r.id;
       const cur = statRange[line][key] || { n: 0, fMin: 1e9, fMax: -1, dMin: 1e9, dMax: -1, cMin: 1e9, cMax: -1 };
@@ -272,9 +345,9 @@ const exPlatform = runExtra("platform");
 const regPlatform = !!(P().ends["hidden:platform"] && P().endings["hidden:platform"]);
 const exS2 = runExtra("s2");
 
-setEnds({ "jiang:he": true, "jiang:normal": true, "jiang:be": true, "jiang:cold": true, "jiang:ember": true, "jiang:scar": true, "jiang:empty": true, "jiang:blade": true, "jiang:nobody": true });
+setEnds({ "jiang:he": true, "jiang:normal": true, "jiang:be": true, "jiang:cold": true, "jiang:ember": true, "jiang:scar": true, "jiang:empty": true, "jiang:blade": true, "jiang:nobody": true, "jiang:halt": true });
 const exYanhua = runExtra("yanhua");
-setEnds({ "wan:he": true, "wan:normal": true, "wan:be": true, "wan:cold": true, "wan:ember": true, "wan:clean": true, "wan:burn": true, "wan:gone": true });
+setEnds({ "wan:he": true, "wan:normal": true, "wan:be": true, "wan:cold": true, "wan:ember": true, "wan:clean": true, "wan:burn": true, "wan:gone": true, "wan:halt": true });
 const exJujia = runExtra("jujia");
 
 console.log("\n=== 番外 ===");
@@ -314,7 +387,7 @@ const titleConds = [
   ["bothLines", true], ["lore8", true], ["allGallery", true], ["laowan", true], ["platformEnd", true],
   ["jujia", true], ["yanhua", true], ["rawread", true], ["allEndings", true], ["wanAllEnds", true],
   ["jiangAllEnds", true], ["wanEmber", true], ["wanClean", true], ["jiangScar", true],
-  ["jiangEmpty", true], ["wanBurn", true], ["wanGone", true], ["jiangBlade", true], ["jiangNobody", true], ["peakFavor", true]
+  ["jiangEmpty", true], ["wanBurn", true], ["wanGone", true], ["jiangBlade", true], ["jiangNobody", true], ["wanHalt", true], ["jiangHalt", true], ["peakFavor", true]
 ];
 const badConds = titleConds.filter(([c, expect]) => G.condMet(c) !== expect).map(([c]) => c);
 want(badConds.length === 0, "这些称号条件在全收集下没亮: " + badConds.join(", "));
@@ -322,13 +395,13 @@ want(badConds.length === 0, "这些称号条件在全收集下没亮: " + badCon
 const gc = G.galleryCount(), gf = G.galleryFound();
 console.log(`\n=== 图鉴 ===`);
 console.log(` 场景 ${gf.bg}/${gc.bg}｜人物 ${gf.char}/${gc.char}｜档案 ${gf.lore}/${gc.lore}｜结局 ${gf.ending}/${gc.ending}｜合计 ${gf.bg+gf.char+gf.lore+gf.ending}/${gc.total}`);
-want(gf.ending === 18, "图鉴结局栏应有 18 格，实际 " + gf.ending);
+want(gf.ending === 20, "图鉴结局栏应有 20 格，实际 " + gf.ending);
 want(gf.bg + gf.char + gf.lore + gf.ending === gc.total, "图鉴未全满");
 
 /* 称号表检查 */
-want(S.titles.length === 25, "称号总数应为 25，当前 " + S.titles.length);
+want(S.titles.length === 27, "称号总数应为 27，当前 " + S.titles.length);
 const conds = new Set(S.titles.map(t => t.cond));
-const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","wanBurn","wanGone","jiangBlade","jiangNobody","peakFavor"].includes(c));
+const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","wanBurn","wanGone","jiangBlade","jiangNobody","wanHalt","jiangHalt","peakFavor"].includes(c));
 want(missing.length === 0, "称号用了引擎不认识的条件: " + missing.join(", "));
 
 /* ============================================================
@@ -338,7 +411,7 @@ delete store["xundao_read_v1"];
 delete store["xundao_skip_v1"];
 G.showTitle();
 G.startQuiz("wan");
-const firstRun = run("wan", [0, 0, 0, 0], [0, 0, 0, 0, 0, 0]);
+const firstRun = run("wan", [0, 0, 0, 0], new Array(8).fill(0));
 const readN = G.readCount();
 console.log(`\n=== 跳过已读 ===`);
 console.log(` 首跑 ${firstRun.texts} 句正文，记录 ${readN} 条已读指纹`);
@@ -347,7 +420,7 @@ want(readN >= firstRun.texts * 0.8, "已读记录太少: " + readN + " / " + fir
 G.showTitle();
 G.toggleSkip();                                  // 打开跳过已读
 G.startQuiz("wan");
-const skipRun = run("wan", [0, 0, 0, 0], [0, 0, 0, 0, 0, 0]);
+const skipRun = run("wan", [0, 0, 0, 0], new Array(8).fill(0));
 G.toggleSkip();                                  // 关掉，别影响后面
 console.log(` 二跑（跳过已读）${skipRun.texts} 句正文`);
 want(skipRun.texts < firstRun.texts * 0.35, `跳过已读没生效：${skipRun.texts} / ${firstRun.texts}`);

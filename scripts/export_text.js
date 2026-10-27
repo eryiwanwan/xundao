@@ -368,15 +368,16 @@ doc.push("|---|---|");
 const COND_CN = {
   anyEnding: "走完任意一个结局", normalEnd: "达成普通结局", beEnd: "达成 BE",
   wanHE: "万宁线 HE", jiangHE: "江野线 HE", bothLines: "两条线都走过",
-  wanAllEnds: "万宁线八个结局走完", jiangAllEnds: "江野线八个结局走完",
+  wanAllEnds: "万宁线九个结局走完", jiangAllEnds: "江野线九个结局走完",
   lore8: "档案 ≥ 8 条", allGallery: "图鉴全收", laowan: "读完《老万的十年》",
   platformEnd: "读完《同一个站台》", jujia: "读完《居家情事》", yanhua: "读完《烟花》",
-  rawread: "两篇手稿彩蛋都读完", allEndings: "十八个结局全解锁",
+  rawread: "两篇手稿彩蛋都读完", allEndings: "二十个结局全解锁",
   wanEmber: "走到《灯亮着》", wanClean: "走到《没有一个人是干净的》",
   jiangScar: "走到《手上有雪》", jiangEmpty: "走到《空房间》",
   peakFavor: "单周目好感推到 100",
   wanBurn: "走到《烧到自己》", wanGone: "走到《没人在家》",
-  jiangBlade: "走到《刀口朝内》", jiangNobody: "走到《无人认领》"
+  jiangBlade: "走到《刀口朝内》", jiangNobody: "走到《无人认领》",
+  wanHalt: "走到《到此为止》", jiangHalt: "走到《不了了之》"
 };
 for (const t of S.titles){
   doc.push(`| **${t.name}** | ${t.desc} |`);

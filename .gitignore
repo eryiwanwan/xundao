@@ -23,3 +23,7 @@ scripts/_shots/
 # 两篇手稿的未删改原文（只在本地保留，仓库里只有编码后的 eggs.js）
 chapters/*_18plus.md
 03_全文文本.md
+
+# 一次性探针脚本的临时输出
+scripts/_strat.js
+scripts/_playtest.json

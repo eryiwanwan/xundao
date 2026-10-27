@@ -187,6 +187,8 @@ function condMet(id){
     case "wanGone":    return !!e["wan:gone"];
     case "jiangBlade": return !!e["jiang:blade"];
     case "jiangNobody":return !!e["jiang:nobody"];
+    case "wanHalt":    return !!e["wan:halt"];
+    case "jiangHalt":  return !!e["jiang:halt"];
     case "peakFavor":  return (p.peakFavor || 0) >= FAVOR_MAX;
     default: return false;
   }
@@ -798,8 +800,8 @@ function showEnd(){
       <div class="end-sub">选择回溯</div>
       <div class="end-log">${logHtml() || '<div class="log-row">（本条线没有留下记录）</div>'}</div>
       <div class="end-note">${lineDone
-        ? `这条线的八个结局都走完了。番外篇里多了一页手稿——${extraHint}。`
-        : `这条线还差 ${total - done} 个结局。八个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}</div>
+        ? `这条线的九个结局都走完了。番外篇里多了一页手稿——${extraHint}。`
+        : `这条线还差 ${total - done} 个结局。九个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}</div>
       <div class="btn-row">
         ${id === "hidden:laowan" ? '<button class="btn primary" onclick="startExtra(\'laowan\')">读那封信 · 《老万的十年》</button>' : ''}
         <button class="btn ${id==='hidden:laowan'?'':'primary'}" onclick="showExtras()">番外篇</button>
