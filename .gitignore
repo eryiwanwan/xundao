@@ -10,7 +10,7 @@ scripts/_bgm_backup/
 scripts/_oga_dl/
 scripts/_fma_dl/
 scripts/_fma_hits.json
-scripts/_audio_log.json
+_archive/_audio_log.json
 
 # 截图（本地核对用，不发布）
 scripts/shots/
@@ -25,8 +25,8 @@ chapters/*_18plus.md
 03_全文文本.md
 
 # 一次性探针脚本的临时输出
-scripts/_strat.js
-scripts/_playtest.json
+_archive/_strat.js
+_archive/_playtest.json
 
 # 扩章用的章节草稿（已并入 story.js，仅本地留档）
-scripts/_ch_*.txt
+_archive/_ch_*.txt

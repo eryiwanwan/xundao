@@ -938,8 +938,8 @@ function showEnd(){
       <div class="end-note">${meta.line === "hidden"
         ? `隐藏结局不进任何一条线的计数。要再走一遍，从封面重开就是。`
         : lineDone
-        ? `这条线的九个结局都走完了。番外篇里那页手稿——${extraHint}——已经打开了。`
-        : `这条线还差 ${total - done} 个结局。九个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}
+        ? `这条线的 ${total} 个结局都走完了。结局不是靠一个数值分的：好感、执念、线索三条一起决定。`
+        : `这条线还差 ${total - done} 个结局（共 ${total} 个）。结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}
         ${type === "he" ? `<br>番外篇里多了一页手稿——${extraHint}，从现在起可以读了。` : ""}</div>
       <div class="btn-row">
         ${id === "hidden:laowan" ? '<button class="btn primary" onclick="startExtra(\'laowan\')">读那封信 · 《老万的十年》</button>' : ''}

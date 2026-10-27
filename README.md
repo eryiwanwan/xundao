@@ -63,6 +63,8 @@ python scripts/set_gift.py --off       # 清空码表，封面入口一起隐藏
 
 > 改完 `game/` 里的 js / css，记得把 `game/index.html` 里那几个 `?v=011` 一起加一档——GitHub Pages 的缓存比想象中顽固，不加会出现「代码改了但玩家看到的还是旧的」。
 
+每个脚本干什么、怎么跑、改完按什么顺序验，见 **`scripts/README.md`**。
+
 ### 本地开发
 
 ```bash
