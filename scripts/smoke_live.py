@@ -36,7 +36,7 @@ PLAY = """
 """
 
 # 由 scripts/plan.js 求出：一条 HE，方便顺便看结局页
-RUN = ("wan", [0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], "wan:he")
+RUN = ("wan", [0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "wan:he")
 
 errors, failed = [], []
 with sync_playwright() as p:
