@@ -289,7 +289,7 @@ function setHud(){
   hud.innerHTML = `
     <div class="hud-left">${hudTitle()}<span class="hud-adult" title="本作含成人向内容，仅限 18 岁以上">18+</span></div>
     <div class="hud-right">
-      <button class="mini ${skipRead?'on':''}" onclick="toggleSkip()" title="读过的正文自动掠过，选项不会跳过">跳过已读</button>
+      <button class="mini skip ${skipRead?'on':''}" onclick="toggleSkip()" title="读过的正文自动掠过，选项不会跳过">跳过<span class="only-wide">已读</span></button>
       <button class="mini" onclick="showGallery()">图鉴</button>
       <button class="mini" onclick="showTitle()">返回封面</button>
     </div>`;

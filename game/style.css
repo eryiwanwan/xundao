@@ -668,3 +668,14 @@ body{
   .es-row{ gap: 10px; }
   .es-v{ width: 58px; font-size: 11.5px; }
 }
+
+/* ---------- 手机端 HUD：三个按钮不要折行 ---------- */
+.mini{ white-space: nowrap; }
+@media (max-width: 640px){
+  #hud{ padding: 10px 12px; font-size: 11px; }
+  #hud .hud-left{ letter-spacing: .04em; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #hud .hud-right{ gap: 6px; }
+  #hud .hud-right .mini{ padding: 5px 8px; font-size: 11px; letter-spacing: 0; }
+  .hud-adult{ font-size: 9px; padding: 1px 4px; margin-left: 5px; }
+}
+@media (max-width: 640px){ .only-wide{ display: none; } }
