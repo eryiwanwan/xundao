@@ -62,21 +62,24 @@ function walk(line, qp, cp) {
 }
 
 const target = process.argv[2];
-const line = target.split(":")[0];
-const optsLen = S.lines[line].filter(n => n.t === "choice").map(n => n.opts.length);
-const total = optsLen.reduce((a, k) => a * k, 1);
-const Qs = S.quiz[line];
-const pick = fn => Qs.map(q => { let b = 0, bv = -1e9; q.opts.forEach((o, i) => { const v = fn(o); if (v > bv) { bv = v; b = i; } }); return b; });
-const plans = [Qs.map(() => 0), pick(o => o.favor || 0), pick(o => (o.clue || 0) * 100 + (o.favor || 0)), pick(o => (o.danger || 0) * 100 + (o.favor || 0))];
+// "hidden:xxx" 不是路线名，要回到正文里搜（目前隐藏结局挂在万宁终章）
+const cand = S.lines[target.split(":")[0]] ? [target.split(":")[0]] : Object.keys(S.lines);
+for (const line of cand) {
+  const optsLen = S.lines[line].filter(n => n.t === "choice").map(n => n.opts.length);
+  const total = optsLen.reduce((a, k) => a * k, 1);
+  const Qs = S.quiz[line];
+  const pick = fn => Qs.map(q => { let b = 0, bv = -1e9; q.opts.forEach((o, i) => { const v = fn(o); if (v > bv) { bv = v; b = i; } }); return b; });
+  const plans = [Qs.map(() => 0), pick(o => o.favor || 0), pick(o => (o.clue || 0) * 100 + (o.favor || 0)), pick(o => (o.danger || 0) * 100 + (o.favor || 0))];
 
-for (const qp of plans) {
-  for (let t = 0; t < total; t++) {
-    let x = t; const cp = [];
-    for (let j = 0; j < optsLen.length; j++) { cp.push(x % optsLen[j]); x = Math.floor(x / optsLen[j]); }
-    const r = walk(line, qp, cp);
-    if (r.id === target) {
-      console.log(JSON.stringify({ line, quiz: qp, choices: cp, stat: { f: r.f, d: r.d, c: r.c } }));
-      process.exit(0);
+  for (const qp of plans) {
+    for (let t = 0; t < total; t++) {
+      let x = t; const cp = [];
+      for (let j = 0; j < optsLen.length; j++) { cp.push(x % optsLen[j]); x = Math.floor(x / optsLen[j]); }
+      const r = walk(line, qp, cp);
+      if (r.id === target) {
+        console.log(JSON.stringify({ line, quiz: qp, choices: cp, stat: { f: r.f, d: r.d, c: r.c } }));
+        process.exit(0);
+      }
     }
   }
 }

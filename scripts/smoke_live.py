@@ -35,8 +35,8 @@ PLAY = """
 }
 """
 
-# 由 scripts/plan.js 求出：一条 HE，方便顺便看结局页
-RUN = ("wan", [0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "wan:he")
+# 由 scripts/plan.js 求出：一条 HE，方便顺便看结局页（v0.16：每线 14 个选择点，选项目录已打散）
+RUN = ("wan", [0, 0, 0, 0], [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "wan:he")
 
 errors, failed = [], []
 with sync_playwright() as p:

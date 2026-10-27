@@ -222,7 +222,7 @@ const w = summary.wan, j = summary.jiang;
 console.log("\n" + "=".repeat(58));
 console.log("汇总");
 console.log(`  单线通关 ${w.avgW} / ${j.avgW} 字；两条线各读一遍约 ${w.avgW + j.avgW} 字（约 ${((w.avgW + j.avgW) / 500).toFixed(0)} 分钟 @500字/分）`);
-console.log(`  要看完 20 个结局需重读：主干重复 ${w.trunkChars + j.trunkChars} 字 × 每多一个结局一次`);
+console.log(`  要看完 21 个结局需重读：主干重复 ${w.trunkChars + j.trunkChars} 字 × 每多一个结局一次`);
 console.log(`  每条线平均 ${Math.round(w.avgS)} / ${Math.round(j.avgS)} 句正文`);
 
 fs.writeFileSync("scripts/_playtest.json", JSON.stringify(summary, null, 1));

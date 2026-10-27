@@ -42,12 +42,13 @@ PLAY = """
 }
 """
 
-# 由 scripts/plan.js 求出
+# 由 scripts/plan.js 求出（v0.15：每线 14 个选择点）
 RUNS = [
-    ("wan",   [0, 0, 0, 0], [2, 1, 1, 2, 0, 1, 0, 0, 0, 0, 0, 0], "wan:halt",   "v10_01_wan_halt"),
-    ("jiang", [0, 0, 0, 0], [0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0], "jiang:halt", "v10_02_jiang_halt"),
-    ("wan",   [0, 0, 0, 0], [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "wan:he",     "v10_03_wan_he"),
-    ("jiang", [0, 0, 0, 0], [2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "jiang:he",   "v10_04_jiang_he"),
+    ("wan",   [0, 0, 0, 0], [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], "wan:halt",   "v10_01_wan_halt"),
+    ("jiang", [0, 0, 0, 0], [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "jiang:halt", "v10_02_jiang_halt"),
+    ("wan",   [0, 0, 0, 0], [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "wan:he",     "v10_03_wan_he"),
+    ("jiang", [0, 0, 0, 0], [2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "jiang:he",   "v10_04_jiang_he"),
+    ("wan",   [0, 0, 0, 0], [0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], "hidden:gege", "v10_08_hidden_gege"),
 ]
 
 errors = []
@@ -72,7 +73,7 @@ with sync_playwright() as p:
             errors.append(f"结局不符: {line} 期望 {expect} 实际 {got}")
         pg.screenshot(path=os.path.join(OUT, shot + ".png"), full_page=True)
 
-    # 图鉴（20 格）/ 称号（27 个）
+    # 图鉴（55 格）/ 称号（28 个）
     pg.evaluate("showTitle()")
     pg.evaluate("showGallery('ending')")
     pg.wait_for_timeout(500)

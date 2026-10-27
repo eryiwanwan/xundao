@@ -706,3 +706,134 @@ body{
   .hud-adult{ font-size: 9px; padding: 1px 4px; margin-left: 5px; }
 }
 @media (max-width: 640px){ .only-wide{ display: none; } }
+
+
+/* ============================================================
+   v0.15：结局特效
+   六种气质各一套：HE 暖金光点 / 暗结局红雾 / 温和与普通淡入 /
+   疏离冷灰 / BE 一击闪红+抖 / 隐藏结局星尘
+   全部只用 transform 与 opacity，跑得动手机；尊重「减少动态效果」
+   ============================================================ */
+.end-wrap{ position: relative; isolation: isolate; }
+.end-fx{
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  border-radius: 10px; z-index: -1;
+}
+.end-fx::before, .end-fx::after{
+  content: ""; position: absolute; inset: -14%;
+  opacity: 0;
+}
+
+/* 标题：从模糊到清晰，一股气提上来 */
+.end-title{
+  animation: endTitleIn .9s cubic-bezier(.2,.7,.2,1) both;
+  text-shadow: 0 0 26px rgba(0,0,0,.5);
+}
+@keyframes endTitleIn{
+  0%{ opacity: 0; filter: blur(10px); letter-spacing: .34em; transform: translateY(10px); }
+  100%{ opacity: 1; filter: blur(0); letter-spacing: .16em; transform: none; }
+}
+.end-kicker{ animation: fadeUp .7s ease-out both; }
+.end-line{ animation: fadeUp .7s ease-out .16s both; }
+.end-sub, .end-log, .end-stats{ animation: fadeUp .7s ease-out .26s both; }
+.unlock-box{ animation: fadeUp .7s ease-out .34s both; }
+@keyframes fadeUp{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform:none; } }
+
+/* ---------- 印章 ---------- */
+.end-seal{
+  position: absolute; right: 18px; top: 14px;
+  width: 62px; height: 62px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; letter-spacing: 0;
+  border: 1.5px solid currentColor; color: var(--accent);
+  opacity: .8; transform: rotate(-12deg);
+  animation: sealIn .8s cubic-bezier(.2,1.5,.4,1) .5s both;
+  mix-blend-mode: screen;
+}
+.end-seal::after{
+  content: ""; position: absolute; inset: 5px; border-radius: 50%;
+  border: 1px solid currentColor; opacity: .45;
+}
+@keyframes sealIn{
+  0%{ opacity: 0; transform: rotate(-32deg) scale(1.9); filter: blur(4px); }
+  60%{ opacity: .95; }
+  100%{ opacity: .82; transform: rotate(-12deg) scale(1); filter: blur(0); }
+}
+
+/* ---------- HE：暖金光晕 + 上升光点 ---------- */
+.fx-he .end-fx::before{
+  background: radial-gradient(60% 50% at 50% 32%, rgba(226,183,106,.20), rgba(226,183,106,0) 70%);
+  opacity: 1; animation: heGlow 6s ease-in-out infinite;
+}
+.fx-he .end-fx::after{
+  background:
+    radial-gradient(2px 2px at 12% 88%, rgba(232,200,140,.9), transparent 60%),
+    radial-gradient(2px 2px at 28% 96%, rgba(232,200,140,.7), transparent 60%),
+    radial-gradient(3px 3px at 44% 92%, rgba(232,200,140,.85), transparent 60%),
+    radial-gradient(2px 2px at 61% 99%, rgba(232,200,140,.6), transparent 60%),
+    radial-gradient(2px 2px at 78% 90%, rgba(232,200,140,.8), transparent 60%),
+    radial-gradient(3px 3px at 91% 95%, rgba(232,200,140,.5), transparent 60%);
+  opacity: .9;
+  animation: heMotes 9s linear infinite;
+}
+@keyframes heGlow{ 0%,100%{ opacity:.9; transform: scale(1); } 50%{ opacity:1; transform: scale(1.04); } }
+@keyframes heMotes{ 0%{ transform: translateY(0); opacity: 0; } 15%{ opacity: .9; } 100%{ transform: translateY(-120px); opacity: 0; } }
+
+/* ---------- 暗结局：红雾一呼一吸 ---------- */
+.fx-dark .end-fx::before{
+  background: radial-gradient(55% 45% at 50% 60%, rgba(150,38,32,.28), rgba(60,10,10,0) 72%);
+  opacity: 1; animation: darkBreath 7s ease-in-out infinite;
+}
+@keyframes darkBreath{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+
+/* ---------- BE：一击闪红 + 抖一下 ---------- */
+.fx-be .end-fx::before{
+  background: radial-gradient(80% 70% at 50% 50%, rgba(170,30,24,.42), rgba(0,0,0,0) 70%);
+  animation: beFlash 1.6s ease-out both;
+}
+.fx-be.end-wrap{ animation: beShock .55s cubic-bezier(.36,.07,.19,.97) .12s both; }
+@keyframes beFlash{ 0%{ opacity:0; } 12%{ opacity:1; } 100%{ opacity:.28; } }
+@keyframes beShock{
+  0%,100%{ transform: translate3d(0,0,0); }
+  20%{ transform: translate3d(-5px,2px,0); }
+  40%{ transform: translate3d(4px,-2px,0); }
+  60%{ transform: translate3d(-3px,1px,0); }
+  80%{ transform: translate3d(2px,0,0); }
+}
+
+/* ---------- 隐藏结局：星尘 ---------- */
+.fx-hidden .end-fx::before{
+  background:
+    radial-gradient(1.5px 1.5px at 15% 25%, rgba(255,255,255,.85), transparent 60%),
+    radial-gradient(1.5px 1.5px at 72% 18%, rgba(200,220,255,.75), transparent 60%),
+    radial-gradient(2px 2px at 38% 62%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 86% 74%, rgba(200,220,255,.65), transparent 60%),
+    radial-gradient(2px 2px at 52% 88%, rgba(255,255,255,.5), transparent 60%);
+  opacity: .8; animation: starTwinkle 5s ease-in-out infinite;
+}
+.fx-hidden .end-fx::after{
+  background: radial-gradient(60% 50% at 50% 42%, rgba(120,150,220,.16), transparent 72%);
+  opacity: 1; animation: heGlow 8s ease-in-out infinite;
+}
+@keyframes starTwinkle{ 0%,100%{ opacity:.45; } 50%{ opacity:.9; } }
+
+/* ---------- 疏离：冷灰下压 ---------- */
+.fx-cold .end-fx::before{
+  background: linear-gradient(180deg, rgba(120,140,170,.14), rgba(10,12,16,0) 65%);
+  opacity: 1; animation: fadeOnly 2.4s ease-out both;
+}
+/* ---------- 温和 / 普通：只淡入 ---------- */
+.fx-soft .end-fx::before, .fx-normal .end-fx::before{
+  background: radial-gradient(70% 60% at 50% 40%, rgba(180,180,190,.07), transparent 70%);
+  animation: fadeOnly 2s ease-out both;
+}
+@keyframes fadeOnly{ from{ opacity:0; } to{ opacity:1; } }
+
+/* ---------- 卷轴入场：整页轻轻推近 ---------- */
+.end-wrap{ animation: endWrapIn .8s ease-out both; }
+@keyframes endWrapIn{ from{ opacity:0; transform: scale(.985); } to{ opacity:1; transform:none; } }
+
+@media (prefers-reduced-motion: reduce){
+  .end-wrap, .end-title, .end-kicker, .end-line, .end-sub, .end-log, .end-stats,
+  .unlock-box, .end-seal, .end-fx::before, .end-fx::after{ animation: none !important; }
+}

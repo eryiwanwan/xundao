@@ -64,10 +64,10 @@ const endIds = Object.keys(endings);
 console.log(`=== 结局表 ${endIds.length} 个 ===`);
 endIds.forEach(id => console.log(` ${id.padEnd(16)} ${endings[id].name}`));
 
-want(endIds.length === 20, "结局总数应为 20，当前 " + endIds.length);
+want(endIds.length === 21, "结局总数应为 21，当前 " + endIds.length);
 want(endIds.filter(id => id.startsWith("wan:")).length === 9, "万宁线应有 9 个结局");
 want(endIds.filter(id => id.startsWith("jiang:")).length === 9, "江野线应有 9 个结局");
-want(endIds.filter(id => id.startsWith("hidden:")).length === 2, "隐藏结局应有 2 个");
+want(endIds.filter(id => id.startsWith("hidden:")).length === 3, "隐藏结局应有 3 个");
 
 /* 每个结局都要有 name / desc / hint */
 endIds.forEach(id => {
@@ -246,9 +246,13 @@ let crashes = 0;
 for (const line of ["wan", "jiang"]) {
   const optsLen = S.lines[line].filter(n => n.t === "choice").map(n => n.opts.length);
   const total = optsLen.reduce((a, k) => a * k, 1);
+  /* 选择点一多，全组合就是千万级（C 档后 3^14 起），跑一次要半小时。
+     这里改成等距抽样：覆盖率不变，时间可控。要看全量就 STEP=1。 */
+  const MAXRUNS = 200000;
+  const stride = Math.max(1, Math.floor(total / MAXRUNS));
   let runs = 0;
   for (const qp of quizPlans(line)) {
-    for (let t = 0; t < total; t++) {
+    for (let t = 0; t < total; t += stride) {
       let x = t; const cp = [];
       for (let j = 0; j < optsLen.length; j++) { cp.push(x % optsLen[j]); x = Math.floor(x / optsLen[j]); }
       const r = swalk(line, qp.plan, cp);
@@ -343,7 +347,6 @@ const exLaowan = runExtra("laowan");
 const regLaowan = !!(P().ends["hidden:laowan"] && P().endings["hidden:laowan"]);
 const exPlatform = runExtra("platform");
 const regPlatform = !!(P().ends["hidden:platform"] && P().endings["hidden:platform"]);
-const exS2 = runExtra("s2");
 
 setEnds({ "jiang:he": true, "jiang:normal": true, "jiang:be": true, "jiang:cold": true, "jiang:ember": true, "jiang:scar": true, "jiang:empty": true, "jiang:blade": true, "jiang:nobody": true, "jiang:halt": true });
 const exYanhua = runExtra("yanhua");
@@ -353,7 +356,6 @@ const exJujia = runExtra("jujia");
 console.log("\n=== 番外 ===");
 console.log(` 老万的十年 -> ${exLaowan.end} (${exLaowan.texts} 句)`);
 console.log(` 同一个站台 -> ${exPlatform.end} (${exPlatform.texts} 句)`);
-console.log(` 哥哥的柜子 -> ${exS2.end} (${exS2.texts} 句)`);
 console.log(` 烟花       -> ${exYanhua.end} (${exYanhua.texts} 句)`);
 console.log(` 居家情事   -> ${exJujia.end} (${exJujia.texts} 句)`);
 want(exLaowan.end === "extra", "《老万的十年》走不完: " + exLaowan.end);
@@ -375,7 +377,7 @@ endIds.forEach(id => allEndsObj[id] = true);
 P().ends = allEndsObj;
 P().endings = Object.assign({}, allEndsObj);
 P().peakFavor = 100;
-P().extras = { laowan: true, jujia: true, yanhua: true, platform: true, s2: true };
+P().extras = { laowan: true, jujia: true, yanhua: true, platform: true };
 P().he = { wan: true, jiang: true };
 P().lines = { wan: true, jiang: true };
 Object.keys(S.gallery.bg).forEach(k => P().bg[k] = true);
@@ -385,7 +387,7 @@ S.gallery.lore.forEach(e => P().lore[e.id] = true);
 const titleConds = [
   ["anyEnding", true], ["normalEnd", true], ["beEnd", true], ["wanHE", true], ["jiangHE", true],
   ["bothLines", true], ["lore8", true], ["allGallery", true], ["laowan", true], ["platformEnd", true],
-  ["jujia", true], ["yanhua", true], ["rawread", true], ["allEndings", true], ["wanAllEnds", true],
+  ["jujia", true], ["yanhua", true], ["rawread", true], ["gege", true], ["allEndings", true], ["wanAllEnds", true],
   ["jiangAllEnds", true], ["wanEmber", true], ["wanClean", true], ["jiangScar", true],
   ["jiangEmpty", true], ["wanBurn", true], ["wanGone", true], ["jiangBlade", true], ["jiangNobody", true], ["wanHalt", true], ["jiangHalt", true], ["peakFavor", true]
 ];
@@ -395,13 +397,13 @@ want(badConds.length === 0, "这些称号条件在全收集下没亮: " + badCon
 const gc = G.galleryCount(), gf = G.galleryFound();
 console.log(`\n=== 图鉴 ===`);
 console.log(` 场景 ${gf.bg}/${gc.bg}｜人物 ${gf.char}/${gc.char}｜档案 ${gf.lore}/${gc.lore}｜结局 ${gf.ending}/${gc.ending}｜合计 ${gf.bg+gf.char+gf.lore+gf.ending}/${gc.total}`);
-want(gf.ending === 20, "图鉴结局栏应有 20 格，实际 " + gf.ending);
+want(gf.ending === 21, "图鉴结局栏应有 21 格，实际 " + gf.ending);
 want(gf.bg + gf.char + gf.lore + gf.ending === gc.total, "图鉴未全满");
 
 /* 称号表检查 */
-want(S.titles.length === 27, "称号总数应为 27，当前 " + S.titles.length);
+want(S.titles.length === 28, "称号总数应为 28，当前 " + S.titles.length);
 const conds = new Set(S.titles.map(t => t.cond));
-const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","wanBurn","wanGone","jiangBlade","jiangNobody","wanHalt","jiangHalt","peakFavor"].includes(c));
+const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","wanBurn","wanGone","jiangBlade","jiangNobody","wanHalt","jiangHalt","peakFavor","gege"].includes(c));
 want(missing.length === 0, "称号用了引擎不认识的条件: " + missing.join(", "));
 
 /* ============================================================

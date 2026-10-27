@@ -371,7 +371,7 @@ const COND_CN = {
   wanAllEnds: "万宁线九个结局走完", jiangAllEnds: "江野线九个结局走完",
   lore8: "档案 ≥ 8 条", allGallery: "图鉴全收", laowan: "读完《老万的十年》",
   platformEnd: "读完《同一个站台》", jujia: "读完《居家情事》", yanhua: "读完《烟花》",
-  rawread: "两篇手稿彩蛋都读完", allEndings: "二十个结局全解锁",
+  rawread: "两篇手稿彩蛋都读完", allEndings: "二十一个结局全解锁",
   wanEmber: "走到《灯亮着》", wanClean: "走到《没有一个人是干净的》",
   jiangScar: "走到《手上有雪》", jiangEmpty: "走到《空房间》",
   peakFavor: "单周目好感推到 100",

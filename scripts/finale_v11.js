@@ -80,6 +80,8 @@ function buildCases(line) {
   };
   const flag   = pick(c => c.ifFlag === "hiddenRevenge", "flag");
   const hidden = pick(c => c.ending === "hidden:laowan", "hidden");
+  /* 万宁线专属隐藏结局《哥哥的柜子》：比 HE 再多一步（线索满 + 好感 90） */
+  const gege   = line === "wan" ? all.find(c => c.ending === "hidden:gege") : null;
   const dark   = pick(c => /:(clean|scar)$/.test(c.ending || ""), "dark");
   const he     = pick(c => /:he$/.test(c.ending || ""), "he");
   const soft   = pick(c => /:(ember|empty)$/.test(c.ending || ""), "soft");
@@ -95,6 +97,7 @@ function buildCases(line) {
 
   return [
     Object.assign({}, flag,   { ending: line + ":be" }),
+    ...(gege ? [{ if: { favorMin: 90, clueMin: 5, dangerMax: 40 }, ending: "hidden:gege", branch: gege.branch }] : []),
     Object.assign({}, hidden, { if: { favorMin: t.hiddenF, clueMin: 5 } }),
     Object.assign({}, dark,   { if: { favorMin: t.high, dangerMin: t.darkD } }),
     Object.assign({}, he,     { if: { favorMin: t.high, clueMin: t.heC } }),

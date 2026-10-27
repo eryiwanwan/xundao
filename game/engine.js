@@ -293,6 +293,7 @@ function condMet(id){
     case "allGallery": return (f.bg+f.char+f.lore+f.ending) >= g.total;
     case "laowan":     return !!p.extras.laowan;
     case "platformEnd":return !!p.extras.platform;
+    case "gege":       return !!e["hidden:gege"];
     case "jujia":      return !!p.extras.jujia;
     case "yanhua":     return !!p.extras.yanhua;
     case "rawread":    return !!(p.extras.yanhua && p.extras.jujia);
@@ -894,6 +895,13 @@ function showEnd(){
   const id = (state.ending && state.ending.id) || (state.line + ":normal");
   const meta = endingOf(id) || { name:"结局", brief:"", desc:"", type:"normal", line:state.line };
   const type = meta.type || "normal";
+  /* 结局特效：按气质分六套（样式在 style.css 的「v0.15：结局特效」一节） */
+  const FX = { he:"he", clean:"dark", ember:"soft", normal:"normal", halt:"normal",
+               cold:"cold", be:"be", burn:"be", gone:"be", hidden:"hidden" };
+  const SEAL = { he:"终", hidden:"藏", be:"断", burn:"断", gone:"断",
+                 clean:"灰", ember:"灯", cold:"雪", normal:"章", halt:"章" };
+  const fx = FX[type] || "normal";
+  const seal = SEAL[type] || "章";
 
   // 收集结算
   const firstTime = !progress.endings[id];
@@ -901,6 +909,9 @@ function showEnd(){
   progress.lines[state.line] = true;
   if(!progress.ends) progress.ends = {};
   progress.ends[id] = true;
+  /* 记下这一格是用什么数值走到的：隐藏结局要靠它判「是不是走到底了」 */
+  if(!progress.endStats) progress.endStats = {};
+  progress.endStats[id] = { f: state.favor||0, d: state.danger||0, c: state.clue||0 };
   if(type === "he") progress.he[state.line] = true;
   progress.peakFavor = Math.max(progress.peakFavor||0, state.favor||0);
   if(!state.done){ progress.clears = (progress.clears||0) + 1; state.done = true; }
@@ -911,8 +922,10 @@ function showEnd(){
   const extraHint = state.line === "jiang" ? "《烟花》" : "《居家情事》";
 
   document.getElementById('stage').innerHTML = `
-    <div class="end-wrap">
-      <div class="end-kicker">${firstTime ? "新结局解锁" : "结局回顾"} · ${done} / ${total}</div>
+    <div class="end-wrap fx-${fx}">
+      <div class="end-fx"></div>
+      <div class="end-seal">${seal}</div>
+      <div class="end-kicker">${firstTime ? "新结局解锁" : "结局回顾"} · ${meta.line === "hidden" ? "隐藏" : done + " / " + total}</div>
       <div class="end-title">${meta.name}</div>
       <div class="end-line">${meta.desc || meta.brief || ""}</div>
       ${newly.length ? `<div class="unlock-box">
@@ -922,9 +935,12 @@ function showEnd(){
       ${statBlock()}
       <div class="end-sub">选择回溯</div>
       <div class="end-log">${logHtml() || '<div class="log-row">（本条线没有留下记录）</div>'}</div>
-      <div class="end-note">${lineDone
-        ? `这条线的九个结局都走完了。番外篇里多了一页手稿——${extraHint}。`
-        : `这条线还差 ${total - done} 个结局。九个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}</div>
+      <div class="end-note">${meta.line === "hidden"
+        ? `隐藏结局不进任何一条线的计数。要再走一遍，从封面重开就是。`
+        : lineDone
+        ? `这条线的九个结局都走完了。番外篇里那页手稿——${extraHint}——已经打开了。`
+        : `这条线还差 ${total - done} 个结局。九个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}
+        ${type === "he" ? `<br>番外篇里多了一页手稿——${extraHint}，从现在起可以读了。` : ""}</div>
       <div class="btn-row">
         ${id === "hidden:laowan" ? '<button class="btn primary" onclick="startExtra(\'laowan\')">读那封信 · 《老万的十年》</button>' : ''}
         <button class="btn ${id==='hidden:laowan'?'':'primary'}" onclick="showExtras()">番外篇</button>
@@ -953,8 +969,7 @@ function showExtraEnd(){
     laowan: "他把这十年写下来了。没寄出去。",
     platform: "她往南，他往北。谁也没认出谁。",
     yanhua: "爆竹还在响。雪落在两个人身上，谁也没动。",
-    jujia: "灯一直亮着。这一次，没有人假装没看见。",
-    s2: "柜子里那一条，终于戴上了。"
+    jujia: "灯一直亮着。这一次，没有人假装没看见。"
   }[key] || "刀还在。刀柄在你手里。";
   document.getElementById('stage').innerHTML = `
     <div class="end-wrap">
@@ -1065,6 +1080,8 @@ function extraUnlocked(key){
   switch(ex.cond){
     case "bothHE":  return !!(progress.he.wan && progress.he.jiang);
     case "anyHE":   return !!(progress.he.wan || progress.he.jiang);
+    case "wanHE":   return !!progress.he.wan;
+    case "jiangHE": return !!progress.he.jiang;
     /* 《老万的十年》三条路：双线 HE ／ 两线都 BE ／ 正篇里线索查满好感 85+ */
     case "hiddenLaowan":
       return !!( (progress.he.wan && progress.he.jiang) || (lineBeDone("wan") && lineBeDone("jiang")) || e["hidden:laowan"] );
