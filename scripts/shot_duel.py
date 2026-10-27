@@ -2,7 +2,7 @@
 """shot_duel.py —— 只截「终章 · 郑维成对峙」那一段，确认选项和分支在浏览器里正常
 用法：python scripts/shot_duel.py
 """
-import os, threading, http.server, socketserver, functools
+import os, sys, threading, http.server, socketserver, functools
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,9 +13,15 @@ PORT = 8796
 
 Handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=GAME)
 socketserver.TCPServer.allow_reuse_address = True
-httpd = socketserver.TCPServer(("127.0.0.1", PORT), Handler)
-threading.Thread(target=httpd.serve_forever, daemon=True).start()
-URL = f"http://127.0.0.1:{PORT}/index.html"
+
+# 传 URL 就测线上那份，不传就起本地服务
+if len(sys.argv) > 1:
+    URL = sys.argv[1]
+    httpd = None
+else:
+    httpd = socketserver.TCPServer(("127.0.0.1", PORT), Handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    URL = f"http://127.0.0.1:{PORT}/index.html"
 
 STOP_AT = """
 ([choicePlan, stopAt]) => {
@@ -77,4 +83,4 @@ with sync_playwright() as p:
         print("  ✗", e)
     b.close()
 
-httpd.shutdown()
+if httpd: httpd.shutdown()
