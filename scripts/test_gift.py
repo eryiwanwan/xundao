@@ -13,9 +13,15 @@ PORT = 8795
 
 Handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=GAME)
 socketserver.TCPServer.allow_reuse_address = True
-httpd = socketserver.TCPServer(("127.0.0.1", PORT), Handler)
-threading.Thread(target=httpd.serve_forever, daemon=True).start()
-URL = f"http://127.0.0.1:{PORT}/index.html"
+
+# 传 URL 就测线上那份，不传就起本地服务
+if len(sys.argv) > 1:
+    URL = sys.argv[1]
+    httpd = None
+else:
+    httpd = socketserver.TCPServer(("127.0.0.1", PORT), Handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    URL = f"http://127.0.0.1:{PORT}/index.html"
 
 STATE = """() => {
   const col = JSON.parse(localStorage.getItem('xundao_collect_v1') || '{}');
@@ -122,7 +128,7 @@ with sync_playwright() as p:
     pg.screenshot(path=os.path.join(OUT, "gift_07_mobile.png"))
     b.close()
 
-httpd.shutdown()
+if httpd: httpd.shutdown()
 print("\n控制台报错:", len(errors))
 for e in errors[:10]:
     print("  ✗", e)
