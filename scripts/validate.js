@@ -1,6 +1,6 @@
 /* validate.js —— 无浏览器的端到端走读（0.9 版）
    1. 载入 story.js + eggs.js + engine.js 到 vm 沙箱（DOM 全部打桩）
-   2. 穷举两条线的所有选择组合（3^6 种 × 3 种问卷策略），验证 14 个结局全部可达
+   2. 穷举两条线的所有选择组合（3^6 种 × 3 种问卷策略），验证 18 个结局全部可达
    3. 验证隐藏结局《老万的十年》三条路都能开
    4. 验证番外 / 图鉴 / 称号 / 跳过已读 / 数值上限
 */
@@ -64,9 +64,9 @@ const endIds = Object.keys(endings);
 console.log(`=== 结局表 ${endIds.length} 个 ===`);
 endIds.forEach(id => console.log(` ${id.padEnd(16)} ${endings[id].name}`));
 
-want(endIds.length === 14, "结局总数应为 14，当前 " + endIds.length);
-want(endIds.filter(id => id.startsWith("wan:")).length === 6, "万宁线应有 6 个结局");
-want(endIds.filter(id => id.startsWith("jiang:")).length === 6, "江野线应有 6 个结局");
+want(endIds.length === 18, "结局总数应为 18，当前 " + endIds.length);
+want(endIds.filter(id => id.startsWith("wan:")).length === 8, "万宁线应有 8 个结局");
+want(endIds.filter(id => id.startsWith("jiang:")).length === 8, "江野线应有 8 个结局");
 want(endIds.filter(id => id.startsWith("hidden:")).length === 2, "隐藏结局应有 2 个");
 
 /* 每个结局都要有 name / desc / hint */
@@ -229,10 +229,13 @@ setHE(false, false); setEnds({});
 want(!G.extraUnlocked("laowan"), "一条结局都没有时，老万不该开");
 const routeA = (() => { setHE(true, true); setEnds({ "wan:he": true, "jiang:he": true }); return G.extraUnlocked("laowan"); })();
 const routeB = (() => { setHE(false, false); setEnds({ "wan:be": true, "jiang:be": true }); return G.extraUnlocked("laowan"); })();
+/* B 路应认「任意一种 BE」，不只有《野狗的死法》 */
+const routeB2 = (() => { setHE(false, false); setEnds({ "wan:burn": true, "jiang:blade": true }); return G.extraUnlocked("laowan"); })();
 const routeC = (() => { setHE(false, false); setEnds({ "hidden:laowan": true }); return G.extraUnlocked("laowan"); })();
 console.log(` A 双线 HE：${routeA ? "开" : "锁"} ／ B 两线 BE：${routeB ? "开" : "锁"} ／ C 正篇触发：${routeC ? "开" : "锁"}`);
 want(routeA, "双线 HE 应能开《老万的十年》");
 want(routeB, "两线都 BE 应能开《老万的十年》");
+want(routeB2, "两线走到《烧到自己》＋《刀口朝内》也应能开《老万的十年》");
 want(routeC, "正篇走到隐藏结局应能重读《老万的十年》");
 setHE(false, false); setEnds({ "wan:be": true });
 want(!G.extraUnlocked("laowan"), "只有一条线 BE 时不该开《老万的十年》");
@@ -269,9 +272,9 @@ const exPlatform = runExtra("platform");
 const regPlatform = !!(P().ends["hidden:platform"] && P().endings["hidden:platform"]);
 const exS2 = runExtra("s2");
 
-setEnds({ "jiang:he": true, "jiang:normal": true, "jiang:be": true, "jiang:cold": true, "jiang:ember": true, "jiang:scar": true, "jiang:empty": true });
+setEnds({ "jiang:he": true, "jiang:normal": true, "jiang:be": true, "jiang:cold": true, "jiang:ember": true, "jiang:scar": true, "jiang:empty": true, "jiang:blade": true, "jiang:nobody": true });
 const exYanhua = runExtra("yanhua");
-setEnds({ "wan:he": true, "wan:normal": true, "wan:be": true, "wan:cold": true, "wan:ember": true, "wan:clean": true });
+setEnds({ "wan:he": true, "wan:normal": true, "wan:be": true, "wan:cold": true, "wan:ember": true, "wan:clean": true, "wan:burn": true, "wan:gone": true });
 const exJujia = runExtra("jujia");
 
 console.log("\n=== 番外 ===");
@@ -311,7 +314,7 @@ const titleConds = [
   ["bothLines", true], ["lore8", true], ["allGallery", true], ["laowan", true], ["platformEnd", true],
   ["jujia", true], ["yanhua", true], ["rawread", true], ["allEndings", true], ["wanAllEnds", true],
   ["jiangAllEnds", true], ["wanEmber", true], ["wanClean", true], ["jiangScar", true],
-  ["jiangEmpty", true], ["peakFavor", true]
+  ["jiangEmpty", true], ["wanBurn", true], ["wanGone", true], ["jiangBlade", true], ["jiangNobody", true], ["peakFavor", true]
 ];
 const badConds = titleConds.filter(([c, expect]) => G.condMet(c) !== expect).map(([c]) => c);
 want(badConds.length === 0, "这些称号条件在全收集下没亮: " + badConds.join(", "));
@@ -319,13 +322,13 @@ want(badConds.length === 0, "这些称号条件在全收集下没亮: " + badCon
 const gc = G.galleryCount(), gf = G.galleryFound();
 console.log(`\n=== 图鉴 ===`);
 console.log(` 场景 ${gf.bg}/${gc.bg}｜人物 ${gf.char}/${gc.char}｜档案 ${gf.lore}/${gc.lore}｜结局 ${gf.ending}/${gc.ending}｜合计 ${gf.bg+gf.char+gf.lore+gf.ending}/${gc.total}`);
-want(gf.ending === 14, "图鉴结局栏应有 14 格，实际 " + gf.ending);
+want(gf.ending === 18, "图鉴结局栏应有 18 格，实际 " + gf.ending);
 want(gf.bg + gf.char + gf.lore + gf.ending === gc.total, "图鉴未全满");
 
 /* 称号表检查 */
-want(S.titles.length === 21, "称号总数应为 21，当前 " + S.titles.length);
+want(S.titles.length === 25, "称号总数应为 25，当前 " + S.titles.length);
 const conds = new Set(S.titles.map(t => t.cond));
-const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","peakFavor"].includes(c));
+const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","wanBurn","wanGone","jiangBlade","jiangNobody","peakFavor"].includes(c));
 want(missing.length === 0, "称号用了引擎不认识的条件: " + missing.join(", "));
 
 /* ============================================================

@@ -152,6 +152,10 @@ function lineEndsCount(line){
 function allEndsDone(){
   return endingList().every(e => !!progress.ends[e.id]);
 }
+/* 某条线是否走到过任意一个 BE（BE 有《野狗的死法》《烧到自己》等好几种） */
+function lineBeDone(line){
+  return endingList().some(e => e.line === line && e.type === "be" && !!progress.ends[e.id]);
+}
 
 /* 称号条件判定 */
 function condMet(id){
@@ -179,6 +183,10 @@ function condMet(id){
     case "wanClean":   return !!e["wan:clean"];
     case "jiangScar":  return !!e["jiang:scar"];
     case "jiangEmpty": return !!e["jiang:empty"];
+    case "wanBurn":    return !!e["wan:burn"];
+    case "wanGone":    return !!e["wan:gone"];
+    case "jiangBlade": return !!e["jiang:blade"];
+    case "jiangNobody":return !!e["jiang:nobody"];
     case "peakFavor":  return (p.peakFavor || 0) >= FAVOR_MAX;
     default: return false;
   }
@@ -790,8 +798,8 @@ function showEnd(){
       <div class="end-sub">选择回溯</div>
       <div class="end-log">${logHtml() || '<div class="log-row">（本条线没有留下记录）</div>'}</div>
       <div class="end-note">${lineDone
-        ? `这条线的六个结局都走完了。番外篇里多了一页手稿——${extraHint}。`
-        : `这条线还差 ${total - done} 个结局。六个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}</div>
+        ? `这条线的八个结局都走完了。番外篇里多了一页手稿——${extraHint}。`
+        : `这条线还差 ${total - done} 个结局。八个结局不是靠一个数值分的：好感、执念、线索三条一起决定。`}</div>
       <div class="btn-row">
         ${id === "hidden:laowan" ? '<button class="btn primary" onclick="startExtra(\'laowan\')">读那封信 · 《老万的十年》</button>' : ''}
         <button class="btn ${id==='hidden:laowan'?'':'primary'}" onclick="showExtras()">番外篇</button>
@@ -934,7 +942,7 @@ function extraUnlocked(key){
     case "anyHE":   return !!(progress.he.wan || progress.he.jiang);
     /* 《老万的十年》三条路：双线 HE ／ 两线都 BE ／ 正篇里线索查满好感 85+ */
     case "hiddenLaowan":
-      return !!( (progress.he.wan && progress.he.jiang) || (e["wan:be"] && e["jiang:be"]) || e["hidden:laowan"] );
+      return !!( (progress.he.wan && progress.he.jiang) || (lineBeDone("wan") && lineBeDone("jiang")) || e["hidden:laowan"] );
     case "bothCold":
       return !!(e["wan:cold"] && e["jiang:cold"]);
     case "wanAllEnds":   return lineEndsDone("wan");
@@ -948,7 +956,7 @@ function laowanRoutes(){
   const e = progress.ends || {};
   let n = 0;
   if(progress.he.wan && progress.he.jiang) n++;
-  if(e["wan:be"] && e["jiang:be"]) n++;
+  if(lineBeDone("wan") && lineBeDone("jiang")) n++;
   if(e["hidden:laowan"]) n++;
   return n;
 }
