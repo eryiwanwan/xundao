@@ -31,6 +31,7 @@
 | 结局复盘 | 结局页给出好感 / 执念 / 线索的最终值与称号解锁 |
 | 自动存档 | 节流后每 400ms 落盘一次，回封面可「继续」 |
 | 收集记录 | 图鉴、称号、结局跨周目累积，只有「清空收集记录」才会归零 |
+| 福利码 | 封面页脚「福利码」：输入作者发放的码，一次补齐图鉴 / 番外 / 称号（剧情存档一个字不动） |
 
 开场有一段入场问卷，答案会决定个别段落的写法（不影响主线）。
 
@@ -49,6 +50,10 @@ style.css  ← 样式（六档断点，桌面 / iPad / 手机）
 `endcheck` 的一条 case 可以写 `if: { favorMin, favorMax, dangerMin, dangerMax, clueMin, clueMax }`，再配 `ending: "wan:he"` 指向 `endings` 表里的结局；老写法 `min:` 仍然兼容。
 
 存档在 `localStorage`：`xundao_demo_v2`（剧情）/ `xundao_collect_v1`（跨周目收集）/ `xundao_read_v1`（已读指纹，跳过已读用）/ `xundao_skip_v1`（跳过已读开关）/ `xundao_ageack_v1`（年龄确认）。
+
+福利码的码表写在 `story.js` 的 `gift.codes`（改码不用碰引擎），兑换记录落在收集档的 `gift` 字段，不额外占 key。
+
+> 改完 `game/` 里的 js / css，记得把 `game/index.html` 里那几个 `?v=011` 一起加一档——GitHub Pages 的缓存比想象中顽固，不加会出现「代码改了但玩家看到的还是旧的」。
 
 ### 本地开发
 

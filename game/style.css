@@ -415,6 +415,33 @@ body{
 }
 .age-btns{ display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 
+/* ---------- 福利码 ---------- */
+.gift-input{
+  width: 100%; box-sizing: border-box;
+  background: rgba(255,255,255,.04); border: 1px solid var(--line);
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
+  color: var(--ink); font-family: inherit; font-size: 15px; letter-spacing: .18em;
+  outline: none; transition: border-color .16s ease, background .16s ease;
+}
+.gift-input::placeholder{ color: #5c5750; letter-spacing: .06em; }
+.gift-input:focus{ border-color: var(--accent); background: rgba(255,255,255,.06); }
+.gift-err{ min-height: 18px; font-size: 12px; color: #d4736a; margin-bottom: 12px; }
+.gift-rows{ display: grid; gap: 8px; margin: 4px 0 20px; }
+.gift-row{
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: rgba(255,255,255,.03); font-size: 13px; color: var(--ink-dim);
+}
+.gift-row b{ font-weight: 600; color: var(--accent); letter-spacing: .06em; }
+.shake{ animation: giftShake .3s ease-in-out; }
+@keyframes giftShake{
+  0%,100%{ transform: translateX(0); }
+  20%{ transform: translateX(-7px); }
+  40%{ transform: translateX(6px); }
+  60%{ transform: translateX(-4px); }
+  80%{ transform: translateX(2px); }
+}
+
 @media (max-width: 620px){
   .age-box{ padding: 24px 20px 20px; }
   .age-title{ font-size: 19px; }

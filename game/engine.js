@@ -65,7 +65,8 @@ function blankCol(){
   return { v: COL_VERSION,
            bg:{}, char:{}, lore:{}, endings:{}, titles:{}, extras:{}, lines:{}, he:{},
            ends:{},          // 每条线分别记结局："wan:he" / "hidden:platform" ……（彩蛋与称号判定用）
-           clears:0, peakFavor:0 };
+           clears:0, peakFavor:0,
+           gift:0 };         // 福利码兑换过就记一笔（封面页脚显示「已兑换」）
 }
 let progress = blankCol();
 
@@ -104,6 +105,124 @@ function saveCol(){ try{ localStorage.setItem(COL_KEY, JSON.stringify(progress))
 function resetCol(){
   if(!confirm("确定清空所有收集记录？（图鉴、称号、结局解锁都会消失，剧情存档不受影响）")) return;
   progress = blankCol(); saveCol(); showTitle();
+}
+
+/* ============================================================
+   二·五、福利码（封面页脚入口）
+   ------------------------------------------------------------
+   码表写在 story.js 的 gift.codes 里，这里只负责比对与发放。
+   发的是「收集记录」：图鉴 48 项、番外 5 篇、称号 27 个。
+   剧情存档（SAVE_KEY）一个字都不动，所以兑完还能自己从头走一遍。
+   ============================================================ */
+/* 归一化：全角转半角、去空格与连字符、统一大写 */
+function normCode(str){
+  let t = String(str || "");
+  try{ t = t.normalize("NFKC"); }catch(e){}
+  return t.replace(/[\s\-_\.·。、]/g, "").toUpperCase();
+}
+function giftCodes(){
+  return ((STORY.gift && STORY.gift.codes) || []).map(normCode);
+}
+function openGift(){
+  closeGift();
+  const tip = (STORY.gift && STORY.gift.tip) || "输入福利码，解锁全部图鉴、番外与称号。";
+  const m = document.createElement("div");
+  m.className = "age-mask";
+  m.id = "gift-mask";
+  m.innerHTML = `
+    <div class="age-box">
+      <div class="age-kicker">福利码</div>
+      <div class="age-title">兑换</div>
+      <div class="age-text">${tip}</div>
+      <input class="gift-input" id="gift-input" type="text" inputmode="text"
+             autocomplete="off" autocapitalize="characters" spellcheck="false"
+             maxlength="40" placeholder="输入福利码">
+      <div class="gift-err" id="gift-err"></div>
+      <div class="age-btns">
+        <button class="btn" onclick="closeGift()">取消</button>
+        <button class="btn primary" onclick="submitGift()">兑换</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  const inp = document.getElementById("gift-input");
+  if(inp){
+    inp.addEventListener("keydown", e=>{
+      if(e.key === "Enter"){ e.preventDefault(); submitGift(); }
+      if(e.key === "Escape"){ e.preventDefault(); closeGift(); }
+    });
+    setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 30);
+  }
+}
+function closeGift(){
+  const m = document.getElementById("gift-mask");
+  if(m) m.remove();
+}
+function submitGift(){
+  const inp = document.getElementById("gift-input");
+  const err = document.getElementById("gift-err");
+  const code = normCode(inp ? inp.value : "");
+  if(!code){ if(err) err.textContent = "先输入福利码。"; return; }
+  if(giftCodes().indexOf(code) < 0){
+    if(err) err.textContent = "这个码不对。看看大小写以外有没有多打空格？";
+    const box = document.querySelector("#gift-mask .age-box");
+    if(box){ box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake"); }
+    return;
+  }
+  closeGift();
+  unlockAll();
+}
+/* 一次性发齐：图鉴 / 番外 / 称号 */
+function unlockAll(){
+  loadCol();
+  const g = STORY.gallery || {};
+  /* 图鉴·场景 */
+  for(const k of Object.keys(g.bg || {})) progress.bg[k] = true;
+  /* 图鉴·人物（键是「谁:姿势」） */
+  for(const w of Object.keys(g.char || {}))
+    for(const pose of Object.keys(g.char[w])) progress.char[w + ":" + pose] = true;
+  /* 图鉴·档案 */
+  for(const e of (g.lore || [])) progress.lore[e.id] = true;
+  /* 结局：图鉴读 endings，彩蛋与称号判定读 ends，两处都写 */
+  for(const id of Object.keys(STORY.endings || {})){
+    progress.endings[id] = true;
+    progress.ends[id] = true;
+  }
+  progress.he    = { wan: true, jiang: true };
+  progress.lines = { wan: true, jiang: true };
+  progress.peakFavor = FAVOR_MAX;
+  progress.clears = Math.max(progress.clears || 0, 1);
+  /* 称号：全点亮（含「原稿」这种要靠读彩蛋才给的） */
+  for(const t of (STORY.titles || [])) progress.titles[t.id] = true;
+  /* 番外：解锁靠结局进度自动成立；「已读」标记故意不写，留给玩家自己看 */
+  progress.gift = 1;
+  progress.v = COL_VERSION;
+  saveCol();
+  showTitle();                 // 先重渲染封面，把 48/48、5/5、27/27 刷上去
+  showGiftResult();
+}
+function showGiftResult(){
+  const g = galleryCount(), f = galleryFound();
+  const found = f.bg + f.char + f.lore + f.ending;
+  const tGot  = Object.keys(progress.titles || {}).length;
+  const exAll = Object.keys(STORY.extras || {});
+  const exN   = exAll.filter(k=>extraUnlocked(k)).length;
+  closeGift();
+  const m = document.createElement("div");
+  m.className = "age-mask";
+  m.id = "gift-mask";
+  m.innerHTML = `
+    <div class="age-box">
+      <div class="age-kicker">福利码已生效</div>
+      <div class="age-title">全部收录</div>
+      <div class="gift-rows">
+        <div class="gift-row"><span>图鉴</span><b>${found} / ${g.total}</b></div>
+        <div class="gift-row"><span>番外</span><b>${exN} / ${exAll.length}</b></div>
+        <div class="gift-row"><span>称号</span><b>${tGot} / ${(STORY.titles || []).length}</b></div>
+      </div>
+      <div class="age-warn">剧情存档一个字没动，想自己走一遍随时可以开始。想退回原样，封面页脚「清空收集记录」即可。</div>
+      <div class="age-btns"><button class="btn primary" onclick="closeGift()">好</button></div>
+    </div>`;
+  document.body.appendChild(m);
 }
 
 /* ---------- 结局表 ---------- */
@@ -342,6 +461,8 @@ function showTitle(){
         </div>
         <div class="cover-devlink">
           <a href="javascript:void(0)" onclick="showCredits()">鸣谢与版权</a>
+          <span class="sep">·</span>
+          <a href="javascript:void(0)" onclick="openGift()">福利码${progress.gift ? "（已兑换）" : ""}</a>
           <span class="sep">·</span>
           <a href="javascript:void(0)" onclick="resetCol()">清空收集记录</a>
         </div>
@@ -1137,6 +1258,7 @@ function showTitles(){
    十四、键盘 / 全局点击
    ============================================================ */
 document.addEventListener('keydown', e=>{
+  if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
   if(!state || state.screen!=="story") return;
   if(e.code==="Space" || e.code==="Enter"){ e.preventDefault(); advance(); }
 });
