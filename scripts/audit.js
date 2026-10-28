@@ -167,10 +167,10 @@ for (const [t, , b] of dups) freq.set(b + "|" + t, (freq.get(b + "|" + t) || 1) 
 const thrice = [...freq.entries()].filter(([, c]) => c >= 3);
 say(thrice.length === 0, `没有同一句被复用 3 次以上${thrice.length ? "：" + thrice.slice(0, 3).map(([k]) => k.split("|")[0] + " " + k.split("|")[1].slice(0, 18)).join(" / ") : ""}`);
 
-/* 选项字段完整性 */
+/* 选项字段完整性（flavor 无伤选择故意没有 favor；带 ending 的暗门选项直接跳结局、也不计 favor） */
 let optBad = 0;
-walk(S.lines.wan, n => { if (n.t === "choice") n.opts.forEach(o => { if (!o.branch || !o.branch.length || typeof o.favor !== "number") optBad++; }); });
-walk(S.lines.jiang, n => { if (n.t === "choice") n.opts.forEach(o => { if (!o.branch || !o.branch.length || typeof o.favor !== "number") optBad++; }); });
+walk(S.lines.wan, n => { if (n.t === "choice") n.opts.forEach(o => { if (!o.ending && (!o.branch || !o.branch.length || typeof o.favor !== "number")) optBad++; }); });
+walk(S.lines.jiang, n => { if (n.t === "choice") n.opts.forEach(o => { if (!o.ending && (!o.branch || !o.branch.length || typeof o.favor !== "number")) optBad++; }); });
 say(optBad === 0, `所有选项都有 favor 与 branch${optBad ? "（异常 " + optBad + " 个）" : ""}`);
 
 /* 时间线：§ 标记按出现顺序列出，人工看有没有倒流 */
