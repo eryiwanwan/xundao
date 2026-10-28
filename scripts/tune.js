@@ -47,7 +47,9 @@ function walk(line, quizPick, choicePick) {
   while (idx < queue.length && guard++ < 20000) {
     const n = queue[idx];
     if (n.t === "qvar") { queue.splice(idx, 1, ...((n.map && n.map[st.profile[n.by]]) || [])); continue; }
+    if (n.t === "vary") { const v = st[n.by] || 0; const c = n.cuts || []; let bi = 0; while (bi < c.length && v >= c[bi]) bi++; queue.splice(idx, 1, ...((n.map && n.map[bi]) || [])); continue; }
     if (n.t === "flag") { st.flags[n.key] = (n.val === undefined ? true : n.val); idx++; continue; }
+    if (n.t === "flavor") { const o = n.opts[0]; if (o.branch) queue.splice(idx + 1, 0, ...o.branch); idx++; continue; }
     if (n.t === "choice") {
       let k = choicePick[ci++] ?? 0;
       if (k >= n.opts.length) k = n.opts.length - 1;

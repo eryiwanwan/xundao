@@ -55,8 +55,9 @@ function walk(line, quizPick, choicePick){
 
   const queue = S.lines[line].slice();
   const texts = [];
-  const stats = [];     // 每段正文累计字数，用来算决策密度
-  let idx = 0, ci = 0, guard = 0, wordsSinceChoice = 0;
+  const stats = [];     // 纯 choice 的决策间隔（每段正文累计字数）
+  const statsAll = [];  // choice+flavor 的总决策间隔
+  let idx = 0, ci = 0, guard = 0, wordsSinceChoice = 0, wordsSinceAny = 0;
   let ending = null;
 
   while (idx < queue.length && guard++ < 20000){
@@ -64,6 +65,7 @@ function walk(line, quizPick, choicePick){
     if (n.t === "text"){
       texts.push(n.txt);
       wordsSinceChoice += cn(n.txt);
+      wordsSinceAny += cn(n.txt);
       idx++; continue;
     }
     if (n.t === "qvar"){
@@ -71,8 +73,16 @@ function walk(line, quizPick, choicePick){
       queue.splice(idx, 1, ...v);
       continue;
     }
+    if (n.t === "vary"){ const v = st[n.by] || 0; const c = n.cuts || []; let bi = 0; while (bi < c.length && v >= c[bi]) bi++; queue.splice(idx, 1, ...((n.map && n.map[bi]) || [])); continue; }
     if (n.t === "flag"){
       st.flags[n.key] = (n.val === undefined ? true : n.val);
+      idx++; continue;
+    }
+    if (n.t === "flavor"){
+      // 无伤选择：只分岔旁白，不动三维数值，不进结算。分支不影响结局，固定取第 0 个分支读入旁白。
+      const o = n.opts[0];
+      if (o.branch && o.branch.length) queue.splice(idx + 1, 0, ...o.branch);
+      statsAll.push(wordsSinceAny); wordsSinceAny = 0;
       idx++; continue;
     }
     if (n.t === "choice"){
@@ -83,6 +93,7 @@ function walk(line, quizPick, choicePick){
       st.danger = clamp(st.danger + (o.danger || 0), 0, DANGER_MAX);
       st.clue   = clamp(st.clue   + (o.clue   || 0), 0, CLUE_MAX);
       stats.push(wordsSinceChoice); wordsSinceChoice = 0;
+      statsAll.push(wordsSinceAny); wordsSinceAny = 0;
       if (o.branch && o.branch.length) queue.splice(idx + 1, 0, ...o.branch);
       idx++; continue;
     }
@@ -100,7 +111,7 @@ function walk(line, quizPick, choicePick){
   if (!ending) ending = line + ":normal";
   return { ending, favor:st.favor, danger:st.danger, clue:st.clue, texts,
            words:texts.reduce((a, s) => a + cn(s), 0),
-           seg:stats, wordsSinceChoice };
+           seg:stats, segAll:statsAll, wordsSinceChoice, wordsSinceAny };
 }
 
 /* ---------- 问卷策略 ---------- */
@@ -129,7 +140,7 @@ for (const line of LINES){
   const total = optsLen.reduce((a, k) => a * k, 1);   // 各点选项数不一定是 3（江野线第 5 点是 2 选）
   const seenCount = new Map();
   let runs = 0, sumW = 0, sumS = 0, minW = 1e9, maxW = 0, minS = 1e9, maxS = 0;
-  const byEnding = {}, segAll = [];
+  const byEnding = {}, segAll = [], segAllAll = [];
 
   /* 选择点变多以后路径数会到 50 万级，均匀抽样跑得动，统计口径不变 */
   const MAXRUNS = 40000;
@@ -149,6 +160,7 @@ for (const line of LINES){
       if (r.texts.length < minS) minS = r.texts.length;
       if (r.texts.length > maxS) maxS = r.texts.length;
       segAll.push(...r.seg);
+      segAllAll.push(...r.segAll);
       const b = byEnding[r.ending] = byEnding[r.ending] || { n:0, w:0, fMin:1e9, fMax:-1, dMin:1e9, dMax:-1, cMin:9, cMax:-1 };
       b.n++; b.w += r.words;
       b.fMin = Math.min(b.fMin, r.favor); b.fMax = Math.max(b.fMax, r.favor);
@@ -182,7 +194,8 @@ for (const line of LINES){
   console.log(`  主干（每条必读）${trunk} 句 / ${trunkChars} 字  ← 占字数 ${(trunkChars / uniqChars * 100).toFixed(0)}%`);
   console.log(`  分支旁支        ${branch} 句 / ${uniqChars - trunkChars} 字  ← 占字数 ${((1 - trunkChars / uniqChars) * 100).toFixed(0)}%`);
   console.log(`  单周目读 ${Math.round(sumW / runs)} 字（${Math.round(sumS / runs)} 句），区间 ${minW}–${maxW} 字`);
-  console.log(`  决策间隔 平均每 ${Math.round(segAll.reduce((a, b) => a + b, 0) / segAll.length)} 字一个选择`);
+  console.log(`  决策间隔（纯选择）  平均每 ${Math.round(segAll.reduce((a, b) => a + b, 0) / segAll.length)} 字一个 choice`);
+  console.log(`  决策间隔（含无伤选择）平均每 ${Math.round(segAllAll.reduce((a, b) => a + b, 0) / segAllAll.length)} 字一次交互`);
 }
 
 /* ---------- 结局分布 ---------- */
@@ -222,7 +235,8 @@ const w = summary.wan, j = summary.jiang;
 console.log("\n" + "=".repeat(58));
 console.log("汇总");
 console.log(`  单线通关 ${w.avgW} / ${j.avgW} 字；两条线各读一遍约 ${w.avgW + j.avgW} 字（约 ${((w.avgW + j.avgW) / 500).toFixed(0)} 分钟 @500字/分）`);
-console.log(`  要看完 21 个结局需重读：主干重复 ${w.trunkChars + j.trunkChars} 字 × 每多一个结局一次`);
+const totalEnds = Object.keys(S.endings).length;
+console.log(`  要看完 ${totalEnds} 个结局需重读：主干重复 ${w.trunkChars + j.trunkChars} 字 × 每多一个结局一次`);
 console.log(`  每条线平均 ${Math.round(w.avgS)} / ${Math.round(j.avgS)} 句正文`);
 
 fs.writeFileSync("scripts/_playtest.json", JSON.stringify(summary, null, 1));

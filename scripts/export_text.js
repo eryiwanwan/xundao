@@ -107,6 +107,14 @@ function render(nodes, d, opt = {}){
         if (s) out.push(s);
         break;
       }
+      case "vary": {
+        out.push(head(d, `#### 〔分档〕按「${n.by}」的数值切换`));
+        for (let bi = 0; bi < (n.map||[]).length; bi++){
+          out.push(head(d, `##### 第 ${bi+1} 档（${(n.cuts||[])[bi-1] !== undefined ? "≥" + n.cuts[bi-1] : "起点"}）`));
+          renderBlock(n.map[bi], d, opt);
+        }
+        break;
+      }
       case "qvar": {
         const q = (S.quiz[opt.line] || []).find(x => x.id === n.by);
         out.push(head(d, `#### 〔变体〕按问卷 ${n.by.toUpperCase()}${q ? "「" + q.text + "」" : ""} 的答案切换`));
@@ -214,6 +222,8 @@ function countNodes(nodes){
       if (n.t === "text"){ c.text++; c.chars += (n.txt || "").length; }
       else if (n.t === "choice"){ c.choice++; (n.opts || []).forEach(o => walk(o.branch)); }
       else if (n.t === "qvar"){ Object.keys(n.map).forEach(k => walk(n.map[k])); }
+      else if (n.t === "qvar"){ Object.keys(n.map).forEach(k => walk(n.map[k])); }
+      else if (n.t === "vary"){ (n.map||[]).forEach(b => walk(b)); }
       else if (n.t === "endcheck"){ (n.cases || []).forEach(x => walk(x.branch)); }
     }
   };

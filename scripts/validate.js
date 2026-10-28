@@ -64,9 +64,9 @@ const endIds = Object.keys(endings);
 console.log(`=== 结局表 ${endIds.length} 个 ===`);
 endIds.forEach(id => console.log(` ${id.padEnd(16)} ${endings[id].name}`));
 
-want(endIds.length === 21, "结局总数应为 21，当前 " + endIds.length);
-want(endIds.filter(id => id.startsWith("wan:")).length === 9, "万宁线应有 9 个结局");
-want(endIds.filter(id => id.startsWith("jiang:")).length === 9, "江野线应有 9 个结局");
+want(endIds.length === 29, "结局总数应为 29，当前 " + endIds.length);
+want(endIds.filter(id => id.startsWith("wan:")).length === 13, "万宁线应有 13 个结局");
+want(endIds.filter(id => id.startsWith("jiang:")).length === 13, "江野线应有 13 个结局");
 want(endIds.filter(id => id.startsWith("hidden:")).length === 3, "隐藏结局应有 3 个");
 
 /* 每个结局都要有 name / desc / hint */
@@ -82,6 +82,11 @@ function scan(nodes) {
     if (n.t === "endcheck") for (const c of n.cases || []) {
       if (c.ending) allEndingRefs.add(c.ending.includes(":") ? c.ending : "*:" + c.ending);
       scan(c.branch);
+    }
+    /* 选项也能直接指定结局（结局里的暗门） */
+    for (const o of n.opts || []) {
+      if (o.ending) allEndingRefs.add(o.ending.includes(":") ? o.ending : "*:" + o.ending);
+      if (o.branch) scan(o.branch);
     }
     if (n.branch) scan(n.branch);
   }
@@ -162,6 +167,11 @@ function run(line, quizPlan, choicePlan) {
       G.choose(k);
       continue;
     }
+    if (n.t === "flavor") {
+      // 无伤选择：也走 G.choose，让引擎展开旁白分支（不动数值）
+      G.choose(0);
+      continue;
+    }
     if (n.t === "text") texts++;
     G.advance();
   }
@@ -209,15 +219,23 @@ function swalk(line, quizPlan, choicePlan){
   while (idx < queue.length && guard++ < 20000){
     const n = queue[idx];
     if (n.t === "qvar"){ queue.splice(idx, 1, ...((n.map && n.map[st.profile[n.by]]) || [])); continue; }
+    if (n.t === "vary"){ const v = st[n.by] || 0; const c = n.cuts || []; let bi = 0; while (bi < c.length && v >= c[bi]) bi++; queue.splice(idx, 1, ...((n.map && n.map[bi]) || [])); continue; }
     if (n.t === "flag"){
       st.flags[n.key] = (n.val === undefined ? true : n.val);
       idx++; continue;
     }
     if (n.t === "text"){ texts++; idx++; continue; }
+    if (n.t === "flavor"){
+      // 无伤选择：只分岔旁白，不动数值。固定取第 0 个分支读入。
+      const o = n.opts[0];
+      if (o.branch && o.branch.length) queue.splice(idx + 1, 0, ...o.branch);
+      idx++; continue;
+    }
     if (n.t === "choice"){
       let k = choicePlan[ci++] ?? 0;
       if (k >= n.opts.length) k = n.opts.length - 1;
       const o = n.opts[k];
+      if (o.ending) ending = o.ending.includes(":") ? o.ending : line + ":" + o.ending;
       st.favor  = clampNum(st.favor  + (o.favor  || 0), 0, 100);
       st.danger = clampNum(st.danger + (o.danger || 0), 0, 100);
       st.clue   = clampNum(st.clue   + (o.clue   || 0), 0, 5);
@@ -397,7 +415,7 @@ want(badConds.length === 0, "这些称号条件在全收集下没亮: " + badCon
 const gc = G.galleryCount(), gf = G.galleryFound();
 console.log(`\n=== 图鉴 ===`);
 console.log(` 场景 ${gf.bg}/${gc.bg}｜人物 ${gf.char}/${gc.char}｜档案 ${gf.lore}/${gc.lore}｜结局 ${gf.ending}/${gc.ending}｜合计 ${gf.bg+gf.char+gf.lore+gf.ending}/${gc.total}`);
-want(gf.ending === 21, "图鉴结局栏应有 21 格，实际 " + gf.ending);
+want(gf.ending === 29, "图鉴结局栏应有 29 格，实际 " + gf.ending);
 want(gf.bg + gf.char + gf.lore + gf.ending === gc.total, "图鉴未全满");
 
 /* 称号表检查 */

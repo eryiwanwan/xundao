@@ -3,7 +3,7 @@
      1 第5章独走 flag            → BE《野狗的死法》
      2 好感 ≥85 且线索 5         → 隐藏《老万的十年》
      3 好感 ≥high 且执念 ≥40     → 暗结局
-     4 好感 ≥high 且线索 ≥heC    → HE（女主线《驯刀》／男主线《我留下》）
+     4 好感 ≥high 且线索 ≥heC    → HE（女主线《驯刀》／男主线《归鞘》）
      5 好感 ≥high                → 温和结局
      6 好感 ≥normalF 且执念 ≥burnD → 《烧到自己》/《刀口朝内》（中段但烧穿了）
      7 好感 ≥normalF 且线索 ≥splitC → 普通《各自过冬》
@@ -20,8 +20,8 @@ vm.runInContext(src + "\n;globalThis.STORY=STORY;", ctx);
 const S = ctx.STORY;
 
 const T = {
-  wan:   { high: 72, darkD: 40, heC: 4, normalF: 50, lowF: 28, burnD: 52, coldD: 36, splitC: 4, hiddenF: 85 },
-  jiang: { high: 72, darkD: 44, heC: 3, normalF: 50, lowF: 28, burnD: 72, coldD: 46, splitC: 3, hiddenF: 85 }
+  wan:   { high: 72, darkD: 40, heC: 4, normalF: 50, lowF: 28, burnD: 52, coldD: 36, splitC: 4, hiddenF: 85, clearC: 5 },
+  jiang: { high: 72, darkD: 44, heC: 3, normalF: 50, lowF: 28, burnD: 72, coldD: 46, splitC: 3, hiddenF: 85, clearC: 4 }
 };
 
 const head = [
@@ -86,6 +86,7 @@ function buildCases(line) {
   const he     = pick(c => /:he$/.test(c.ending || ""), "he");
   const soft   = pick(c => /:(ember|empty)$/.test(c.ending || ""), "soft");
   const normal = pick(c => /:normal$/.test(c.ending || ""), "normal");
+  const clear  = pick(c => /:clear$/.test(c.ending || ""), "clear");
   const cold   = pick(c => /:cold$/.test(c.ending || ""), "cold");
   const burn   = pick(c => /:(burn|blade)$/.test(c.ending || ""), "burn");
   const last   = pick(c => c.else, "else");
@@ -103,6 +104,7 @@ function buildCases(line) {
     Object.assign({}, he,     { if: { favorMin: t.high, clueMin: t.heC } }),
     Object.assign({}, soft,   { if: { favorMin: t.high } }),
     { if: { favorMin: t.normalF, dangerMin: t.burnD }, ending: burnId, branch: burn.branch },
+    Object.assign({}, clear,  { if: { favorMin: t.normalF, favorMax: t.high - 1, clueMin: t.clearC } }),
     Object.assign({}, normal, { if: { favorMin: t.normalF, clueMin: t.splitC } }),
     { if: { favorMin: t.normalF }, ending: haltId, branch: haltBranch },
     { if: { favorMin: t.lowF, dangerMin: t.burnD }, ending: burnId, branch: burn.branch },

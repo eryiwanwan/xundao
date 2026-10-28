@@ -42,7 +42,9 @@ function walk(line, qp, cp) {
   while (i < Q.length && g++ < 20000) {
     const n = Q[i];
     if (n.t === "qvar") { Q.splice(i, 1, ...((n.map && n.map[st.profile[n.by]]) || [])); continue; }
+    if (n.t === "vary") { const v = st[n.by] || 0; const c = n.cuts || []; let bi = 0; while (bi < c.length && v >= c[bi]) bi++; Q.splice(i, 1, ...((n.map && n.map[bi]) || [])); continue; }
     if (n.t === "flag") { st.flags[n.key] = n.val === undefined ? true : n.val; i++; continue; }
+    if (n.t === "flavor") { const o = n.opts[0]; if (o.branch) Q.splice(i + 1, 0, ...o.branch); i++; continue; }
     if (n.t === "choice") {
       let k = cp[ci++] ?? 0; if (k >= n.opts.length) k = n.opts.length - 1;
       const o = n.opts[k];

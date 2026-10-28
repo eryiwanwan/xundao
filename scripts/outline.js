@@ -57,8 +57,10 @@ function flatten(arr, out){
     if (!n || typeof n !== "object") continue;
     out.push(n);
     if (n.t === "choice") for (const o of (n.opts || [])) if (o.branch) flatten(o.branch, out);
+    if (n.t === "flavor") for (const o of (n.opts || [])) if (o.branch) flatten(o.branch, out);
     if (n.t === "endcheck") for (const c of (n.cases || [])) if (c.branch) flatten(c.branch, out);
     if (n.t === "qvar") for (const k of Object.keys(n.map || {})) flatten(n.map[k], out);
+    if (n.t === "vary") for (const k of Object.keys(n.map || {})) flatten(n.map[k], out);
   }
   return out;
 }
@@ -104,7 +106,17 @@ function trunk(line){
       const v = (n.map && n.map[st.profile[n.by]]) || [];
       q.splice(i, 1, ...v); continue;
     }
+    if (n.t === "vary"){
+      const v = st[n.by] || 0; const c = n.cuts || []; let bi = 0;
+      while (bi < c.length && v >= c[bi]) bi++;
+      q.splice(i, 1, ...((n.map && n.map[bi]) || [])); continue;
+    }
     if (n.t === "flag"){ st.flags[n.key] = (n.val === undefined ? true : n.val); i++; continue; }
+    if (n.t === "flavor"){
+      const o = n.opts[0];
+      if (o.branch) q.splice(i + 1, 0, ...o.branch);
+      i++; continue;
+    }
     if (n.t === "choice"){
       const o = n.opts[0];
       st.favor += o.favor || 0; st.danger += o.danger || 0; st.clue += o.clue || 0;

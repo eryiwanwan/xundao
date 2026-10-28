@@ -673,6 +673,18 @@ function renderNode(){
       save();
       continue; // 不递增 idx，处理替换进来的第一个节点
     }
+    /* vary：按三维数值的档位换成不同写法（同一件事，不同心境）
+       { t:"vary", by:"danger", cuts:[36,60], map:[ [低档..], [中档..], [高档..] ] } */
+    if(n.t==="vary"){
+      const v = Number(state[n.by]) || 0;
+      const cuts = n.cuts || [];
+      let bi = 0;
+      while(bi < cuts.length && v >= cuts[bi]) bi++;
+      const repl = (n.map && n.map[bi]) || [];
+      state.queue.splice(state.idx, 1, ...repl);
+      save();
+      continue;
+    }
     if(n.t==="endcheck"){
       const cases = n.cases || [];
       let picked = null;
@@ -691,7 +703,7 @@ function renderNode(){
       if(skipRead && state.mode !== "extra" && isRead(n.txt)){ state.idx++; save(); continue; }
       renderText(n); return;
     }
-    if(n.t==="choice"){ renderChoice(n); return; }
+    if(n.t==="choice" || n.t==="flavor"){ renderChoice(n); return; }   // flavor = 无伤选择：只换旁白，不动数值
     state.idx++; // 未知类型，跳过
   }
   showEnd();
@@ -788,7 +800,7 @@ function renderText(n){
 /* 兜底：万一某条分支忘了写 ending，就靠标题文字认（正常情况用不到） */
 const ENDING_TEXT_MAP = [
   { re: /^HE · 《驯刀》/,              id: "he" },
-  { re: /^HE · 《我留下》/,            id: "he" },
+  { re: /^HE · 《归鞘》/,            id: "he" },
   { re: /^普通结局 · 《各自过冬》/,     id: "normal" },
   { re: /^BE · 《野狗的死法》/,         id: "be" },
   { re: /^暗结局 · 《没有一个人是干净的》/, id: "wan:clean" },
@@ -798,7 +810,8 @@ const ENDING_TEXT_MAP = [
   { re: /^疏离结局 · 《雪停之前》/,      id: "wan:cold" },
   { re: /^疏离结局 · 《往北的路》/,      id: "jiang:cold" },
   { re: /^隐藏结局 · 《老万的十年》/,    id: "hidden:laowan" },
-  { re: /^隐藏结局 · 《同一个站台》/,    id: "hidden:platform" }
+  { re: /^隐藏结局 · 《同一个站台》/,    id: "hidden:platform" },
+  { re: /^隐藏结局 · 《哥哥的柜子》/,    id: "hidden:gege" }
 ];
 function detectEnding(txt){
   if(state.mode !== "main" || state.ending) return;
@@ -829,10 +842,23 @@ function renderChoice(n){
 function choose(k){
   const n = state.queue[state.idx]; // choice 节点
   const o = n.opts[k];
+  /* flavor（无伤选择）：只分岔旁白，不动三维数值，也不进结算页的选择清单 */
+  if(n.t === "flavor"){
+    if(o.branch && o.branch.length) state.queue.splice(state.idx+1, 0, ...o.branch);
+    state.idx++;
+    saveNow();
+    renderNode();
+    return;
+  }
   state.favor  = clampNum((state.favor||0)  + (o.favor||0),  0, FAVOR_MAX);
   state.danger = clampNum((state.danger||0) + (o.danger||0), 0, DANGER_MAX);
   state.clue   = clampNum((state.clue||0)   + (o.clue||0),   0, CLUE_MAX);
   state.log.push({k:"choice", q:n.q, ans:o.label, favor:o.favor});
+  // 选项可以直接指定结局（用于「结局里的暗门」：同一个 HE 下多出一条隐藏线）
+  if(o.ending){
+    const eid = o.ending.includes(":") ? o.ending : (state.line + ":" + o.ending);
+    state.ending = { id: eid, line: state.line };
+  }
   // 把 branch 节点插到 choice 之后
   if(o.branch && o.branch.length){
     state.queue.splice(state.idx+1, 0, ...o.branch);
@@ -901,9 +927,9 @@ function showEnd(){
   const type = meta.type || "normal";
   /* 结局特效：按气质分六套（样式在 style.css 的「v0.15：结局特效」一节） */
   const FX = { he:"he", clean:"dark", ember:"soft", normal:"normal", halt:"normal",
-               cold:"cold", be:"be", burn:"be", gone:"be", hidden:"hidden" };
-  const SEAL = { he:"终", hidden:"藏", be:"断", burn:"断", gone:"断",
-                 clean:"灰", ember:"灯", cold:"雪", normal:"章", halt:"章" };
+               cold:"cold", be:"be", burn:"be", gone:"be", hidden:"hidden", lost:"be", clear:"soft" };
+  const SEAL = { he:"终", hidden:"藏", be:"断", burn:"断", gone:"断", lost:"断",
+                 clean:"灰", ember:"灯", cold:"雪", normal:"章", halt:"章", clear:"线" };
   const fx = FX[type] || "normal";
   const seal = SEAL[type] || "章";
 
