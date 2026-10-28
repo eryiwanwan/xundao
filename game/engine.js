@@ -67,7 +67,7 @@ function blankCol(){
   return { v: COL_VERSION,
            bg:{}, char:{}, lore:{}, endings:{}, titles:{}, extras:{}, lines:{}, he:{},
            ends:{},          // 每条线分别记结局："wan:he" / "hidden:platform" ……（彩蛋与称号判定用）
-           clears:0, peakFavor:0,
+           clears:0, peakFavor:0, peakClue:0, peakDanger:0,
            gift:0 };         // 福利码兑换过就记一笔（封面页脚显示「已兑换」）
 }
 let progress = blankCol();
@@ -193,6 +193,8 @@ function unlockAll(){
   progress.he    = { wan: true, jiang: true };
   progress.lines = { wan: true, jiang: true };
   progress.peakFavor = FAVOR_MAX;
+  progress.peakClue = CLUE_MAX;
+  progress.peakDanger = DANGER_MAX;
   progress.clears = Math.max(progress.clears || 0, 1);
   /* 称号：全点亮（含「原稿」这种要靠读彩蛋才给的） */
   for(const t of (STORY.titles || [])) progress.titles[t.id] = true;
@@ -312,7 +314,17 @@ function condMet(id){
     case "jiangNobody":return !!e["jiang:nobody"];
     case "wanHalt":    return !!e["wan:halt"];
     case "jiangHalt":  return !!e["jiang:halt"];
+    case "wanClear":   return !!e["wan:clear"];
+    case "jiangClear": return !!e["jiang:clear"];
+    case "wanLost":    return !!e["wan:lost"];
+    case "wanFall":    return !!e["wan:fall"];
+    case "jiangFang":  return !!e["jiang:fang"];
+    case "jiangGou":   return !!e["jiang:gou"];
+    case "wanLost2":   return !!e["wan:lost2"];
+    case "jiangLost2": return !!e["jiang:lost2"];
     case "peakFavor":  return (p.peakFavor || 0) >= FAVOR_MAX;
+    case "clueFull":   return (p.peakClue || 0) >= CLUE_MAX;
+    case "dangerFull": return (p.peakDanger || 0) >= DANGER_MAX;
     default: return false;
   }
 }
@@ -944,6 +956,8 @@ function showEnd(){
   progress.endStats[id] = { f: state.favor||0, d: state.danger||0, c: state.clue||0 };
   if(type === "he") progress.he[state.line] = true;
   progress.peakFavor = Math.max(progress.peakFavor||0, state.favor||0);
+  progress.peakClue = Math.max(progress.peakClue||0, state.clue||0);
+  progress.peakDanger = Math.max(progress.peakDanger||0, state.danger||0);
   if(!state.done){ progress.clears = (progress.clears||0) + 1; state.done = true; }
   saveCol(); flushRead();
   const newly = checkTitles();

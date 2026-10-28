@@ -395,6 +395,8 @@ endIds.forEach(id => allEndsObj[id] = true);
 P().ends = allEndsObj;
 P().endings = Object.assign({}, allEndsObj);
 P().peakFavor = 100;
+P().peakClue = 5;
+P().peakDanger = 100;
 P().extras = { laowan: true, jujia: true, yanhua: true, platform: true };
 P().he = { wan: true, jiang: true };
 P().lines = { wan: true, jiang: true };
@@ -407,7 +409,8 @@ const titleConds = [
   ["bothLines", true], ["lore8", true], ["allGallery", true], ["laowan", true], ["platformEnd", true],
   ["jujia", true], ["yanhua", true], ["rawread", true], ["gege", true], ["allEndings", true], ["wanAllEnds", true],
   ["jiangAllEnds", true], ["wanEmber", true], ["wanClean", true], ["jiangScar", true],
-  ["jiangEmpty", true], ["wanBurn", true], ["wanGone", true], ["jiangBlade", true], ["jiangNobody", true], ["wanHalt", true], ["jiangHalt", true], ["peakFavor", true]
+  ["jiangEmpty", true], ["wanBurn", true], ["wanGone", true], ["jiangBlade", true], ["jiangNobody", true], ["wanHalt", true], ["jiangHalt", true], ["peakFavor", true],
+  ["wanClear", true], ["jiangClear", true], ["wanLost", true], ["wanFall", true], ["jiangFang", true], ["jiangGou", true], ["wanLost2", true], ["jiangLost2", true], ["clueFull", true], ["dangerFull", true]
 ];
 const badConds = titleConds.filter(([c, expect]) => G.condMet(c) !== expect).map(([c]) => c);
 want(badConds.length === 0, "这些称号条件在全收集下没亮: " + badConds.join(", "));
@@ -419,9 +422,9 @@ want(gf.ending === 29, "图鉴结局栏应有 29 格，实际 " + gf.ending);
 want(gf.bg + gf.char + gf.lore + gf.ending === gc.total, "图鉴未全满");
 
 /* 称号表检查 */
-want(S.titles.length === 28, "称号总数应为 28，当前 " + S.titles.length);
+want(S.titles.length === 38, "称号总数应为 38，当前 " + S.titles.length);
 const conds = new Set(S.titles.map(t => t.cond));
-const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","wanBurn","wanGone","jiangBlade","jiangNobody","wanHalt","jiangHalt","peakFavor","gege"].includes(c));
+const missing = [...conds].filter(c => !["anyEnding","normalEnd","beEnd","wanHE","jiangHE","bothLines","lore8","allGallery","laowan","platformEnd","jujia","yanhua","rawread","allEndings","wanAllEnds","jiangAllEnds","wanEmber","wanClean","jiangScar","jiangEmpty","wanBurn","wanGone","jiangBlade","jiangNobody","wanHalt","jiangHalt","peakFavor","gege","wanClear","jiangClear","wanLost","wanFall","jiangFang","jiangGou","wanLost2","jiangLost2","clueFull","dangerFull"].includes(c));
 want(missing.length === 0, "称号用了引擎不认识的条件: " + missing.join(", "));
 
 /* ============================================================

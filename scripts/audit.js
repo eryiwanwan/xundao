@@ -76,7 +76,11 @@ const condToEnd = {
   wanEmber: "wan:ember", wanClean: "wan:clean", jiangScar: "jiang:scar", jiangEmpty: "jiang:empty",
   wanBurn: "wan:burn", wanGone: "wan:gone", jiangBlade: "jiang:blade", jiangNobody: "jiang:nobody",
   wanHalt: "wan:halt", jiangHalt: "jiang:halt", gege: "hidden:gege",
-  wanHE: "wan:he", jiangHE: "jiang:he"
+  wanHE: "wan:he", jiangHE: "jiang:he",
+  wanClear: "wan:clear", jiangClear: "jiang:clear",
+  wanLost: "wan:lost", wanFall: "wan:fall", jiangFang: "jiang:fang", jiangGou: "jiang:gou",
+  wanLost2: "wan:lost2", jiangLost2: "jiang:lost2",
+  laowan: "hidden:laowan", platformEnd: "hidden:platform"
 };
 const covered = new Set(Object.values(condToEnd));
 const uncovered = endIds.filter(id => !covered.has(id));

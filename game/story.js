@@ -40,7 +40,7 @@ const STORY = {
   meta: {
     title: "驯刀",
     subtitle: "现代 · 恋爱主线 + 悬疑催化 · 双视角",
-    version: "Demo 0.19（18+ 正式版 · 29 结局 · 14 个选择点 · 单周目 1.7 万字 · 好感 × 执念 × 线索 · 无伤选择 · 前期失败 · 线索满值）",
+    version: "Demo 0.19（18+ 正式版 · 29 结局 · 38 称号 · 14 个选择点 · 单周目 1.7 万字 · 好感 × 执念 × 线索 · 无伤选择 · 前期失败 · 线索满值）",
     lineNames: { wan: "万宁线 · 驯化与救赎", jiang: "江野线 · 复仇与沦陷" }
   },
 
@@ -6064,6 +6064,16 @@ const STORY = {
     { id: "collar",   name: "项圈",     cond: "jujia",       desc: "读完彩蛋《居家情事》。那一条她没让他摘，他也没提要摘。" },
     { id: "newyear",  name: "新年快乐", cond: "yanhua",      desc: "读完彩蛋《烟花》。这一年的除夕，有人陪他过了。" },
     { id: "perfect",  name: "满分",     cond: "peakFavor",   desc: "在一周目里把好感推到 100。一步都没走错。" },
+    { id: "cleartrail", name: "查到底", cond: "clueFull",   desc: "有一周目把线索查满 5 条。证据链在你手里，第一次能立住。" },
+    { id: "burnout",  name: "烧穿了",   cond: "dangerFull", desc: "有一周目把执念烧到 100。你离那个名字，只剩一步没迈过去。" },
+    { id: "allclear", name: "全对上了", cond: "wanClear",   desc: "走到《全都对上了》。五条线索拼齐了，她却把信压了一夜。" },
+    { id: "lamplit",  name: "查到灯灭", cond: "jiangClear", desc: "走到《查到灯灭》。他查到灯灭，却不想让那盏灯灭。" },
+    { id: "chase",    name: "追出去",   cond: "wanLost",    desc: "走到《追出去》。她没等到天亮，把自己折进了楼道里。" },
+    { id: "blackroad",name: "一条路走到黑", cond: "wanFall",desc: "走到《一条路走到黑》。父亲没走出来，她也没走出来。" },
+    { id: "unheld",   name: "收不住",   cond: "jiangFang",  desc: "走到《收不住》。他还没学会为她收手，先把自己搭了进去。" },
+    { id: "alonego",  name: "一个人去", cond: "jiangGou",   desc: "走到《一个人去》。他把杀心走到底，没给自己留退路。" },
+    { id: "deadend",  name: "查不下去", cond: "wanLost2",   desc: "走到《查不下去》。她什么都没查到底，也什么都没留住。" },
+    { id: "halfway",  name: "两条路都没走", cond: "jiangLost2", desc: "走到《两条路都没走》。他连恨，都没恨到底。" },
     { id: "snow",     name: "雾川的雪", cond: "allEndings",  desc: "二十九个结局全部解锁。" },
     { id: "raw",      name: "原稿",     cond: "rawread",     desc: "《烟花》与《居家情事》两篇手稿彩蛋都读完了。" }
   ],
