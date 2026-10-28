@@ -83,7 +83,7 @@ const STORY = {
        好感 80+ 线索 4+ 执念 40 以下 → HE（女主线《驯刀》／男主线《归鞘》）
        好感 80+ 执念 40+            → 暗结局（人留下了，手脏了）
        好感 80+ 线索不足            → 温和结局（人留下了，案子没翻完）
-       好感 50–71 + 线索满          → 线索结局（万宁《证据链闭合》／江野《灯没有灭》）
+       好感 50–71 + 线索满          → 线索结局（万宁《未寄信》／江野《那盏灯》）
        好感 50–71 + 线索够          → 普通结局《各自过冬》
        好感 50–71 + 线索不够        → 普通结局《到此为止》/《不了了之》
        好感 30–54 且执念 ≥55        → BE《烧到自己》/《刀口朝内》（自己动了手）
@@ -108,7 +108,7 @@ const STORY = {
     },
     "wan:clean": {
       line: "wan", type: "clean",
-      name: "暗结局 · 《谁都别想干净》",
+      name: "暗结局 · 《雪落无声》",
       brief: "案子了了，人没干净。她用了不该用的手段，他留下来，谁也没问。",
       desc: "她把录音先寄给了郑维成的对家。郑维成倒了，父亲那一条仍然写着「意外」。",
       hint: "好感 72 以上，同时把执念烧到 40 以上"
@@ -129,7 +129,7 @@ const STORY = {
     },
     "wan:clear": {
       line: "wan", type: "clear",
-      name: "线索结局 · 《证据链闭合》",
+      name: "线索结局 · 《未寄信》",
       brief: "五条线索全拼上了，证据链第一次闭合。她却把信压了一夜没寄。",
       desc: "她把五条线索拼成严丝合缝的证据链，却把寄给纪委的信在抽屉里压了一整夜。真相在握，人先软了。",
       hint: "好感 50–71，线索查满 5 条——她查了六年，最后舍不得的是陪她熬夜的人"
@@ -178,14 +178,14 @@ const STORY = {
     },
     "wan:fall": {
       line: "wan", type: "lost",
-      name: "前期失败 · 《走到黑》",
+      name: "前期失败 · 《反锁》",
       brief: "她一个人闯进档案室，门从外面锁上了。",
       desc: "她没叫江野，孤身去档案室挖旧花名册，被那个压过父亲再审申请的人，锁在了存放所有人秘密的房子里。",
       hint: "第 3 章末：执念烧到 55 以上、好感 40 以下——父亲没走出来，她也没走出来"
     },
     "wan:lost2": {
       line: "wan", type: "lost",
-      name: "中期失败 · 《没查到底》",
+      name: "中期失败 · 《空白页》",
       brief: "线索没攒下几条，人也没走近。案子停了，人也停了。",
       desc: "她查了这么多天，本子几乎还是空的；江野来了又走，她始终隔着一段距离。最后她把本子锁进抽屉，拉上了窗帘。",
       hint: "第 4 章末：线索 2 条以下、好感 25 以下——她什么都没查到底，也什么都没留住"
@@ -221,7 +221,7 @@ const STORY = {
     },
     "jiang:clear": {
       line: "jiang", type: "clear",
-      name: "线索结局 · 《灯没有灭》",
+      name: "线索结局 · 《那盏灯》",
       brief: "线索全查到了，真相让他更放不下那把刀。",
       desc: "他查到了最后一条线索，却发现真相翻不动、人也白死。他把刀和钢管并排塞进工具箱最底层，抬头看那盏还没灭的灯。",
       hint: "好感 50–71，线索查到 4 条以上——他查到灯灭，却不想让那盏灯灭"
@@ -277,7 +277,7 @@ const STORY = {
     },
     "jiang:lost2": {
       line: "jiang", type: "lost",
-      name: "中期失败 · 《哪条都没走》",
+      name: "中期失败 · 《落灰》",
       brief: "他查案停在半道，对她的感情也停在半道。",
       desc: "他站在郑维成家楼下到天亮，最后也没上去；她那边，他也总是差一步。最后刀和钢管并排压在箱底落灰，两条路他都停在半道。",
       hint: "第 4 章末：线索 1 条以下、好感 30 以下——他连恨，都没恨到底"
@@ -1623,7 +1623,7 @@ const STORY = {
       { t: "text", txt: "你把字条压回案卷。窗外，天快亮了。你打开手机备忘录，建了一个新文件。打了一行字：郑维成。又加了一行：报警记录消失的经手人。" },
       { t: "text", txt: "你关了台灯。你没睡。你在等天亮。天亮了，市局档案室的上班时间就到了。而你手里，第一次，有了具体的名字。" },
 
-      /* 第3章 endcheck：执念烧穿 + 好感不足 → 前期失败《走到黑》 */
+      /* 第3章 endcheck：执念烧穿 + 好感不足 → 前期失败《反锁》 */
       { t: "endcheck", cases: [
         { if: { dangerMin: 55, favorMax: 40 }, ending: "wan:fall", branch: [
           { t: "text", txt: "天没亮你就起来了。" },
@@ -1636,7 +1636,7 @@ const STORY = {
           { t: "text", txt: "他什么都没说。他只是把门，从外面锁上了。" },
           { t: "text", txt: "你一个人，被锁在了这座存放所有人秘密的房子里。手机没有信号。" },
           { t: "text", cls: "letter", txt: "你早该明白，父亲不是没查到。父亲是没走出去。" },
-          { t: "text", cls: "letter", txt: "前期失败 · 《走到黑》" },
+          { t: "text", cls: "letter", txt: "前期失败 · 《反锁》" },
           { t: "end" }
         ]},
         { min: 48, branch: [
@@ -1965,7 +1965,7 @@ const STORY = {
         [ { t: "text", txt: "你摊开那个抄证据的本子。线索几乎对上了，只剩最后一环。你几乎能看见那条完整的链子，在你眼前晃，还差最后一扣。" } ],
       ]},
 
-      /* 第4章 endcheck：线索太少 + 好感不足 → 中期失败《没查到底》 */
+      /* 第4章 endcheck：线索太少 + 好感不足 → 中期失败《空白页》 */
       { t: "endcheck", cases: [
         { if: { clueMax: 2, favorMax: 25 }, ending: "wan:lost2", branch: [
           { t: "text", txt: "第四天夜里，你把那个抄证据的本子翻来覆去地看。上面几乎还是空的。" },
@@ -1976,7 +1976,7 @@ const STORY = {
           { t: "text", txt: "后来的事，你想不太起来。你只记得某个清晨，你把那个本子合上，锁进抽屉。案子停在那儿，人也在那儿。谁都没有更进一步。" },
           { t: "text", txt: "雾川又下了一场雪。你在窗边看了一会儿，然后拉上了窗帘。" },
           { t: "text", cls: "letter", txt: "你什么都没查到底，也什么都没留住。" },
-          { t: "text", cls: "letter", txt: "中期失败 · 《没查到底》" },
+          { t: "text", cls: "letter", txt: "中期失败 · 《空白页》" },
           { t: "end" }
         ]},
         { min: 58, branch: [
@@ -2963,7 +2963,7 @@ const STORY = {
           { t: "bg", c: "#07070a" },
           { t: "bgm", key: "stairs_tense" },
           { t: "char", who: null },
-          { t: "text", cls: "letter", txt: "暗结局 · 《谁都别想干净》" },
+          { t: "text", cls: "letter", txt: "暗结局 · 《雪落无声》" },
           { t: "text", txt: "正月十一。你把那段录音，先寄给了一个不该寄的人。" },
           { t: "text", txt: "不是纪委。是郑维成对家的律师。你知道那个人会拿它做什么。你也知道，那不算证据，那叫把柄。" },
           { t: "text", txt: "郑维成被带走那天，通报写的是涉嫌经济犯罪。你父亲那一条，仍然写着意外。" },
@@ -3053,7 +3053,7 @@ const STORY = {
         { if: { favorMin: 50, favorMax: 71, clueMin: 5 }, ending: "wan:clear", branch: [
           { t: "bg", c: "#0a0a0f" },
           { t: "bgm", key: "dawn" },
-          { t: "text", cls: "letter", txt: "线索结局 · 《证据链闭合》" },
+          { t: "text", cls: "letter", txt: "线索结局 · 《未寄信》" },
           { t: "text", txt: "正月十五，你终于把那六十六笔存根、那三份再审申请、那张现场照片，还有父亲留下的最后一句，拼在了一起。" },
           { t: "text", txt: "五条线索，像五块拼图，第一次严丝合缝。证据链闭合了。你查了六年的东西，在这一刻，成立了。" },
           { t: "text", txt: "你把材料装进信封，封口，贴上邮票。然后你在椅子上坐了一整夜，没寄出去。" },
@@ -4488,7 +4488,7 @@ const STORY = {
         [ { t: "text", txt: "你回到住处，把本子摊开。线索几乎对上了，只差最后一环。你几乎能看见那条完整的链子，就差最后一扣。你反而有点怕——怕真查完了，你这个人就空了。" } ],
       ]},
 
-      /* 第4章 endcheck：线索太少 + 好感不足 → 中期失败《哪条都没走》 */
+      /* 第4章 endcheck：线索太少 + 好感不足 → 中期失败《落灰》 */
       { t: "endcheck", cases: [
         { if: { clueMax: 1, favorMax: 30 }, ending: "jiang:lost2", branch: [
           { t: "text", txt: "你站在郑维成家楼下，站到天亮，最后也没上去。" },
@@ -4499,7 +4499,7 @@ const STORY = {
           { t: "text", txt: "你没再去她家楼下。你也没再去郑维成家楼下。两条路，你都在半道上停了。" },
           { t: "text", txt: "雾川又过了一年。你在某个夜里想起她，想起她说的'希望'。你没动。你只是坐着，等到天亮。" },
           { t: "text", cls: "letter", txt: "仇没报，人也没留。你连恨，都没恨到底。" },
-          { t: "text", cls: "letter", txt: "中期失败 · 《哪条都没走》" },
+          { t: "text", cls: "letter", txt: "中期失败 · 《落灰》" },
           { t: "end" }
         ]},
         { min: 60, branch: [
@@ -5680,7 +5680,7 @@ const STORY = {
           { t: "bg", c: "#0a0a0f" },
           { t: "bgm", key: "dawn" },
           { t: "char", who: null },
-          { t: "text", cls: "letter", txt: "线索结局 · 《灯没有灭》" },
+          { t: "text", cls: "letter", txt: "线索结局 · 《那盏灯》" },
           { t: "text", txt: "正月十五。你查到了最后一条线索——那个替你挡了钢管、又在你出事那晚追下楼的人，是谁派来的。" },
           { t: "text", txt: "线索全齐了。四条，你一条条记在本子上，又一条条划掉。划到最后一条，笔停住了。" },
           { t: "text", txt: "你查了六年。你以为查到真相就能放下的那把刀，此刻还揣在你怀里。" },
@@ -6047,7 +6047,7 @@ const STORY = {
     { id: "wanall",   name: "刀柄",     cond: "wanAllEnds",  desc: "万宁线的十三个结局全部走完。赢的、散的、死的、脏的、早折的、空手的，刀柄始终在她手里。" },
     { id: "jiangall", name: "三条命",   cond: "jiangAllEnds",desc: "江野线的十三个结局全部走完。他活下来、他走远、他收不住、他空手、他没走出那个冬天。" },
     { id: "ember",    name: "灯还亮着",   cond: "wanEmber",    desc: "走到《灯亮着》。案子没翻完，人留下了，那就一年一年查。" },
-    { id: "clean",    name: "手上不干净",   cond: "wanClean",    desc: "走到《谁都别想干净》。她走进去过，而且没打算回头。" },
+    { id: "clean",    name: "手上不干净",   cond: "wanClean",    desc: "走到《雪落无声》。她走进去过，而且没打算回头。" },
     { id: "scarred",  name: "掌心有雪", cond: "jiangScar",   desc: "走到《手上有雪》。他的名字脏了，她替他擦。" },
     { id: "empty",    name: "隔墙有灯",   cond: "jiangEmpty",  desc: "走到《空房间》。「我不去」是他说过最难的一句话。" },
     { id: "halt",     name: "停在十五", cond: "wanHalt",     desc: "走到《到此为止》。案子停在那儿，人也停在那儿。" },
@@ -6066,14 +6066,14 @@ const STORY = {
     { id: "perfect",  name: "满分",     cond: "peakFavor",   desc: "在一周目里把好感推到 100。一步都没走错。" },
     { id: "cleartrail", name: "查到底", cond: "clueFull",   desc: "有一周目把线索查满 5 条。证据链在你手里，第一次能立住。" },
     { id: "burnout",  name: "烧穿了",   cond: "dangerFull", desc: "有一周目把执念烧到 100。你离那个名字，只剩一步没迈过去。" },
-    { id: "allclear", name: "拼图", cond: "wanClear",   desc: "走到《证据链闭合》。五条线索拼齐了，她却把信压了一夜。" },
-    { id: "lamplit",  name: "灯下黑", cond: "jiangClear", desc: "走到《灯没有灭》。他查到灯灭，却不想让那盏灯灭。" },
+    { id: "allclear", name: "拼图", cond: "wanClear",   desc: "走到《未寄信》。五条线索拼齐了，她却把信压了一夜。" },
+    { id: "lamplit",  name: "灯下黑", cond: "jiangClear", desc: "走到《那盏灯》。他查到灯灭，却不想让那盏灯灭。" },
     { id: "chase",    name: "一脚踩空",   cond: "wanLost",    desc: "走到《追出去》。她没等到天亮，把自己折进了楼道里。" },
-    { id: "blackroad",name: "走到黑", cond: "wanFall",desc: "走到《走到黑》。父亲没走出来，她也没走出来。" },
+    { id: "blackroad",name: "走到黑", cond: "wanFall",desc: "走到《反锁》。父亲没走出来，她也没走出来。" },
     { id: "unheld",   name: "脱手",   cond: "jiangFang",  desc: "走到《收不住》。他还没学会为她收手，先把自己搭了进去。" },
     { id: "alonego",  name: "独行", cond: "jiangGou",   desc: "走到《一个人去》。他把杀心走到底，没给自己留退路。" },
-    { id: "deadend",  name: "半途", cond: "wanLost2",   desc: "走到《没查到底》。她什么都没查到底，也什么都没留住。" },
-    { id: "halfway",  name: "双脚踏空", cond: "jiangLost2", desc: "走到《哪条都没走》。他连恨，都没恨到底。" },
+    { id: "deadend",  name: "半途", cond: "wanLost2",   desc: "走到《空白页》。她什么都没查到底，也什么都没留住。" },
+    { id: "halfway",  name: "双脚踏空", cond: "jiangLost2", desc: "走到《落灰》。他连恨，都没恨到底。" },
     { id: "snow",     name: "雾川的雪", cond: "allEndings",  desc: "二十九个结局全部解锁。" },
     { id: "raw",      name: "原稿",     cond: "rawread",     desc: "《烟花》与《居家情事》两篇手稿彩蛋都读完了。" }
   ],

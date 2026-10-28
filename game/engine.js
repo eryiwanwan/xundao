@@ -815,7 +815,7 @@ const ENDING_TEXT_MAP = [
   { re: /^HE · 《归鞘》/,            id: "he" },
   { re: /^普通结局 · 《各自过冬》/,     id: "normal" },
   { re: /^BE · 《野狗的死法》/,         id: "be" },
-  { re: /^暗结局 · 《谁都别想干净》/, id: "wan:clean" },
+  { re: /^暗结局 · 《雪落无声》/, id: "wan:clean" },
   { re: /^暗结局 · 《手上有雪》/,        id: "jiang:scar" },
   { re: /^温和结局 · 《灯亮着》/,        id: "wan:ember" },
   { re: /^温和结局 · 《空房间》/,        id: "jiang:empty" },
